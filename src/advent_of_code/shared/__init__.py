@@ -1,1 +1,1 @@
-from .tool import Tool, main  # noqa
+from .solver import Solver, main  # noqa

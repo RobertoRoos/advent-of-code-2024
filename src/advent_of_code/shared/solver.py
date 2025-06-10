@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Iterator, List, Type
 
 
-class Tool:
+class Solver:
     """Shared base class for a CLI for any puzzle solution."""
 
     NAME = "__main__"
@@ -28,6 +28,14 @@ class Tool:
             "input_file",
             help="Path to input file to use",
         )
+        parser.add_argument(
+            "--part",
+            "-p",
+            default=1,
+            type=int,
+            choices=[1, 2],
+            help="Run either part 1 (default) or part 2",
+        )
         return parser
 
     def iterate_input(self) -> Iterator[str]:
@@ -44,7 +52,7 @@ class Tool:
         raise NotImplementedError("Class call method must be implemented")
 
 
-def main(cli_class: Type[Tool]):
+def main(cli_class: Type[Solver]):
     """Pass a class and execute it (if this is being run as main)."""
     cli_object = cli_class(sys.argv[1:])
     result = cli_object()
