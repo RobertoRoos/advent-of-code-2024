@@ -3,8 +3,6 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Iterator, List, Type
 
-from io import StringIO
-
 
 class Solver:
     """Shared base class for a CLI for any puzzle solution."""
@@ -36,7 +34,8 @@ class Solver:
             default=1,
             type=int,
             choices=[1, 2],
-            help="Run either part 1 (default) or part 2")
+            help="Run either part 1 (default) or part 2",
+        )
         return parser
 
     def iterate_input(self) -> Iterator[str]:
