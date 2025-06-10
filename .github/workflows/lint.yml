@@ -1,0 +1,22 @@
+#
+# Test the source for formatting and code check (pass/fail)
+#
+
+name: Linting
+
+on: push
+
+jobs:
+
+  flake8-lint:
+    runs-on: ubuntu-latest
+    name: Flake8 code check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: py-actions/flake8@v2
+        with:
+          path: "src/ tests/"
+          plugins: "flake8-bugbear flake8-black flake8-isort"

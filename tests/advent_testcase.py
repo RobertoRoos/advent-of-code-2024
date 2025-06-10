@@ -19,5 +19,5 @@ class AdventTestCase(TestCase, metaclass=ABCMeta):
         """Return solver instance based on ``PUZZLE`` variable."""
         # Get the .txt file next to the test file:
         test_file = Path(inspect.getfile(self.__class__)).absolute()
-        input_file = test_file.parent / "input.txt"
+        input_file = test_file.parent / "sample_input.txt"
         return self.PUZZLE([str(input_file), "--part", str(part)])
