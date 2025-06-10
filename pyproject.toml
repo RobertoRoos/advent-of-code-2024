@@ -1,0 +1,32 @@
+[project]
+name = "advent-of-code"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "RobertoRoos",email = "robert.soor@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+flake8 = "^7.2.0"
+isort = "^6.0.1"
+
+# ----------- Other tools -----------
+
+[tool.black]
+# Empty
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+
+# [flake8]
+# See `.flake8`, no support for `pyproject.toml` yet
