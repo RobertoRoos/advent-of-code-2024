@@ -40,4 +40,4 @@ jobs:
         poetry install --with dev
     - name: Run tests
       run: |
-        poetry run unittest
+        poetry run python -m unittest
