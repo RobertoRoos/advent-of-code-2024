@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Self
+from typing import List, Self, TypeVar
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -8,6 +10,11 @@ class Coord2D:
 
     x: int
     y: int
+
+    def __iadd__(self, other: Self) -> Self:
+        self.x += other.x
+        self.y += other.y
+        return self
 
     @property
     def row(self) -> int:
@@ -28,7 +35,5 @@ class Coord2D:
     def copy(self) -> Self:
         return Coord2D(x=self.x, y=self.y)
 
-    def __iadd__(self, other: Self) -> Self:
-        self.x += other.x
-        self.y += other.y
-        return self
+    def access(self, matrix: List[List[T]]) -> T:
+        return matrix[self.row][self.row]

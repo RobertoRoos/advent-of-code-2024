@@ -17,7 +17,7 @@ class TestDay04(AdventTestCase):
     def test_sample_part_2(self):
         solver = self.get_solver(2)
         result = solver()
-        self.assertEqual("9999", result)
+        self.assertEqual("9", result)
 
 
 if __name__ == "__main__":
