@@ -1,0 +1,34 @@
+from dataclasses import dataclass
+from typing import Self
+
+
+@dataclass
+class Coord2D:
+    """2-dimensional integer coordinate, with basic arithmetics."""
+
+    x: int
+    y: int
+
+    @property
+    def row(self) -> int:
+        return self.y
+
+    @row.setter
+    def row(self, value: int):
+        self.y = value
+
+    @property
+    def col(self) -> int:
+        return self.x
+
+    @col.setter
+    def col(self, value: int):
+        self.x = value
+
+    def copy(self) -> Self:
+        return Coord2D(x=self.x, y=self.y)
+
+    def __iadd__(self, other: Self) -> Self:
+        self.x += other.x
+        self.y += other.y
+        return self
