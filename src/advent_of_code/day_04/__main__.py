@@ -1,6 +1,6 @@
 import re
 
-from advent_of_code.shared import Coord2D, Solver, main
+from advent_of_code.shared import RowCol, Solver, main
 
 
 class Day04(Solver):
@@ -33,15 +33,14 @@ class Day04(Solver):
 
             # Diagonal right, normal
             lines_diag_right = []
-            corner = Coord2D(
-                x=cols - 1, y=0
-            )  # Coordinate of the left-upper corner of the diagonal
+            corner = RowCol(row=0, col=cols - 1)
+            # ^ Coordinate of the left-upper corner of the diagonal
             while corner.row < rows:
                 idx = corner.copy()
                 line = ""
                 while 0 <= idx.row < rows and 0 <= idx.col < cols:
                     line += lines[idx.row][idx.col]
-                    idx += Coord2D(1, 1)
+                    idx += RowCol(1, 1)
                 if corner.col > 0:
                     corner.col -= 1
                 else:
@@ -53,15 +52,14 @@ class Day04(Solver):
 
             # Diagonal left, normal
             lines_diag_left = []
-            corner = Coord2D(
-                x=0, y=0
-            )  # Coordinate of the left-lower corner of the diagonal
+            corner = RowCol(row=0, col=0)
+            # ^ Coordinate of the left-lower corner of the diagonal
             while corner.col < cols:
                 idx = corner.copy()
                 line = ""
                 while 0 <= idx.row < rows and 0 <= idx.col < cols:
                     line += lines[idx.row][idx.col]
-                    idx += Coord2D(1, -1)
+                    idx += RowCol(-1, 1)
                 if corner.row < rows - 1:
                     corner.row += 1
                 else:

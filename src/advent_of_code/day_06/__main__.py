@@ -16,24 +16,24 @@ class Day06(Solver):
 
         # Walk guard through the grid:
         number_steps = 0
-        while grid.in_range(guard.coord):
+        while grid.in_range(guard.loc):
 
-            # Find next coordinate:
+            # Find next locinate:
             turns = 0
-            next_coord = None
+            next_loc = None
             while turns < 4:
-                next_coord = guard.coord.next(guard.direction)
-                if next_coord not in grid.items:
+                next_loc = guard.loc.next(guard.direction)
+                if next_loc not in grid.items:
                     break  # Empty tile
 
                 # Blocked, so rotate
                 guard.direction = guard.direction.rotate()
                 turns += 1
 
-            if next_coord is None:
+            if next_loc is None:
                 raise ValueError("Failed to find a next tile")
 
-            guard.coord = next_coord
+            guard.loc = next_loc
             number_steps += 1
 
         return ""
