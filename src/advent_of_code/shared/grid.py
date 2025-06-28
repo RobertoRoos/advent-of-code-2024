@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 @dataclass
 class RowCol:
-    """2-dimensional integer locinate, with basic arithmetics.
+    """2-dimensional integer location, with basic arithmetics.
 
     Rows and column are 0 indexed and (0,0) should be the first tile in the top
     left corner.
@@ -39,12 +39,12 @@ class RowCol:
     def next(self, direction: Direction) -> Self:
         """Return a new location in a specified direction."""
         if direction == Direction.NORTH:
-            return RowCol(self.col, self.row - 1)
+            return RowCol(self.row - 1, self.col)
         if direction == Direction.EAST:
-            return RowCol(self.col + 1, self.row)
+            return RowCol(self.row, self.col + 1)
         if direction == Direction.SOUTH:
-            return RowCol(self.col, self.row + 1)
-        return RowCol(self.col - 1, self.row)
+            return RowCol(self.row + 1, self.col)
+        return RowCol(self.row, self.col - 1)
 
 
 class GridItem:
@@ -66,7 +66,7 @@ class GridItem:
 
 
 class Grid:
-    """Container for objects on a 2D grid (integer locinates).
+    """Container for objects on a 2D grid (integer locations).
 
     Squares on the grid may be empty.
     """
@@ -83,6 +83,8 @@ class Grid:
         """Add a row to this grid from a string.
 
         Each character will become a ``GridItem``.
+        The full string will determine the bounds of the grid, even for
+        ignore tiles.
 
         :param line:
         :param ignore: Consider this character as an empty tile
@@ -91,13 +93,18 @@ class Grid:
         row = self.rows
         self.rows += 1
 
+        line = line.strip()
+        if self.cols is None or self.cols == 0:
+            self.cols = len(line)
+        elif self.cols != len(line):
+            raise ValueError(f"Unexpected line length {len(line)} for {self.cols} cols")
+
         for column, t in enumerate(line.strip()):
             if t == ignore:
                 continue  # Do nothing
 
             loc = RowCol(col=column, row=row)
             item = GridItem(loc, t)
-            self.cols = max(self.cols, column + 1)
 
             self.items[loc] = item
 
@@ -119,8 +126,8 @@ class Grid:
         self.items.inverse.pop(item)
 
     def in_range(self, loc: RowCol) -> bool:
-        """Return true when a locinates falls in he grid range."""
-        return 0 < loc.row < self.rows and 0 < loc.col < self.cols
+        """Return true when a locations falls in he grid range."""
+        return 0 <= loc.row < self.rows and 0 <= loc.col < self.cols
 
     def find_next(self, loc: RowCol, direction: Direction) -> GridItem | None:
         """Find the next (if any) tile from a starting point into a direction."""

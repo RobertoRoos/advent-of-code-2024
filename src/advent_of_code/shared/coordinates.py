@@ -30,3 +30,14 @@ class Direction(StrEnum):
                 return Direction.EAST
             else:
                 return Direction.SOUTH
+
+    def opposite(self) -> Self:
+        """Get the mirrored direction."""
+        if self.value == self.NORTH.value:
+            return Direction.SOUTH
+        elif self.value == self.EAST.value:
+            return Direction.WEST
+        elif self.value == self.SOUTH.value:
+            return Direction.NORTH
+        else:
+            return Direction.EAST
