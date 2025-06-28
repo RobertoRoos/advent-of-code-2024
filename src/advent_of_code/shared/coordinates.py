@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Self
+from typing import Iterable, Self
 
 
 class Direction(StrEnum):
@@ -41,3 +41,24 @@ class Direction(StrEnum):
             return Direction.NORTH
         else:
             return Direction.EAST
+
+    def next_options(
+        self, clockwise: bool = True, backwards: bool = False
+    ) -> Iterable[Self]:
+        """Yield possible follow-up directions.
+
+        :param clockwise: See :meth:`rotate`
+        :param backwards: If False (default), do not allow backing up
+        """
+        starting_direction = Direction(self.value)
+        from_direction = starting_direction.opposite()
+        next_direction = starting_direction
+
+        while True:
+            yield next_direction
+            next_direction = next_direction.rotate(clockwise)
+            if not backwards and next_direction == from_direction:
+                next_direction = next_direction.rotate(clockwise)  # Rotate past it
+
+            if next_direction == starting_direction:
+                break
