@@ -1,6 +1,7 @@
 import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from time import time
 from typing import Iterator, List, Type
 
 
@@ -55,5 +56,8 @@ class Solver:
 def main(cli_class: Type[Solver]):
     """Pass a class and execute it (if this is being run as main)."""
     cli_object = cli_class(sys.argv[1:])
+    start = time()
     result = cli_object()
     print("Answer:", result)
+    duration = time() - start
+    print(f"(Time taken: {duration:.2f} seconds)")

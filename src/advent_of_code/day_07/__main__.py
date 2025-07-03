@@ -44,12 +44,10 @@ class Day07(Solver):
         """Check if this equation can be completed."""
         size = len(numbers) - 1  # Number of operators
         base = len(cls.OPTIONS)
-        for i in range(base ** size):  # Systematically try all options:
+        for i in range(base**size):  # Systematically try all options:
             i_based_str = cls.base_string(i, base)
             i_based_str = (size - len(i_based_str)) * "0" + i_based_str
-            operators = [
-                Operator.from_number(c) for c in i_based_str
-            ]
+            operators = [Operator.from_number(c) for c in i_based_str]
 
             if cls.test_multiple_operations(total, numbers, operators):
                 return True
@@ -57,7 +55,9 @@ class Day07(Solver):
         return False
 
     @classmethod
-    def test_multiple_operations(cls, expected: int, numbers: List[int], ops: List[Operator]) -> int:
+    def test_multiple_operations(
+        cls, expected: int, numbers: List[int], ops: List[Operator]
+    ) -> int:
         """Return true if this operation series matches the expectation."""
         total = numbers[0]
         for number, op in zip(numbers[1:], ops):
