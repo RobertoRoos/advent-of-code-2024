@@ -24,7 +24,7 @@ class Day06(Solver):
 
         if self.args.part == 1:
             steps = self.get_number_of_steps(self.grid, guard)
-            return str(len(steps))
+            return str(len(steps))  # Count individual tiles, not duplicate steps!
 
         else:
 
@@ -85,7 +85,11 @@ class Day06(Solver):
         return next_loc, next_direction
 
     def get_number_of_steps(
-        self, maze: Grid, guard: GridItem, locations_visited: Locations | None = None
+        self,
+        maze: Grid,
+        guard: GridItem,
+        locations_visited: Locations | None = None,
+        backwards: bool = False,
     ) -> Locations:
         """Return number of steps until the guard leaves this maze.
 

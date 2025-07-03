@@ -43,7 +43,7 @@ class Direction(StrEnum):
             return Direction.EAST
 
     def next_options(
-        self, clockwise: bool = True, backwards: bool = False
+        self, clockwise: bool = True, backwards: bool = True
     ) -> Iterable[Self]:
         """Yield possible follow-up directions.
 

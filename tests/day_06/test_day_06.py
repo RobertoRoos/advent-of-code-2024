@@ -37,7 +37,7 @@ class TestDay06(AdventTestCase):
     def test_sample_part_1_custom_small(self):
         solver = self.get_solver(1, input_file="sample_input_custom_small.txt")
         result = solver()
-        self.assertEqual("3", result)
+        self.assertEqual("2", result)
 
     def test_sample_part_2(self):
         solver = self.get_solver(2)
@@ -48,6 +48,12 @@ class TestDay06(AdventTestCase):
         solver = self.get_solver(2, input_file="sample_input_loop.txt")
         result = solver()
         self.assertEqual("0", result)
+
+    def test_sample_part_2_wall(self):
+        solver = self.get_solver(2, input_file="sample_input_loop_wall.txt")
+        result = solver()
+        # Row, cols: [(2, 3), (3, 3), (4, 3), (4, 2), (4, 0)]
+        self.assertEqual("5", result)
 
 
 if __name__ == "__main__":

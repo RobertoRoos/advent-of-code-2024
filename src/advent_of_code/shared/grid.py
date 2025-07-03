@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Self, TypeVar
+from typing import List, Self, Tuple, TypeVar
 
 from bidict import bidict
 
@@ -35,6 +35,9 @@ class RowCol:
 
     def access(self, matrix: List[List[T]]) -> T:
         return matrix[self.row][self.row]
+
+    def tuple(self) -> Tuple[int, int]:
+        return self.row, self.col
 
     def next(self, direction: Direction) -> Self:
         """Return a new location in a specified direction."""
