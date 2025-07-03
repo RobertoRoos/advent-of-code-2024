@@ -44,6 +44,11 @@ class TestDay06(AdventTestCase):
         result = solver()
         self.assertEqual("6", result)
 
+    def test_sample_part_2_custom(self):
+        solver = self.get_solver(2, input_file="sample_input_loop.txt")
+        result = solver()
+        self.assertEqual("0", result)
+
 
 if __name__ == "__main__":
     unittest.main()

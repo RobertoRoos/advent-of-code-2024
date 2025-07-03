@@ -108,6 +108,13 @@ class Grid:
 
             self.items[loc] = item
 
+    def copy(self) -> Self:
+        new_grid = Grid()
+        new_grid.cols = self.cols
+        new_grid.rows = self.rows
+        new_grid.items = self.items.copy()
+        return new_grid
+
     def get_item_by_character(self, character: str) -> GridItem:
         """Return a single item or raise an exception."""
         item_found = None
@@ -138,3 +145,13 @@ class Grid:
                 return self.items[next_loc]
 
         return None
+
+    def print(self):
+        print()
+        for row in range(self.rows):
+            for col in range(self.cols):
+                loc = RowCol(row=row, col=col)
+                char = self.items[loc].character if loc in self.items else "."
+                print(char, end="")
+            print()
+        print()
