@@ -19,6 +19,12 @@ class RowCol:
     row: int
     col: int
 
+    def __add__(self, other: Self) -> Self:
+        return RowCol(row=self.row + other.row, col=self.col + other.col)
+
+    def __sub__(self, other: Self) -> Self:
+        return RowCol(row=self.row - other.row, col=self.col - other.col)
+
     def __iadd__(self, other: Self) -> Self:
         self.col += other.col
         self.row += other.row

@@ -5,7 +5,7 @@ from advent_of_code.day_07.__main__ import Day07
 from ..advent_testcase import AdventTestCase
 
 
-class TestDay01(AdventTestCase):
+class TestDay07(AdventTestCase):
 
     PUZZLE = Day07
 
