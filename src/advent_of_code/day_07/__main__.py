@@ -51,9 +51,9 @@ class Day07(Solver):
 
         Each execution branch will trigger new child execution branches, until the set
         of operands is full and it finally returns.
-        We check the opposite action of each operation to see if we need to keep pursuing
-        a particular branch. E.g. for "190: 10 19" we could never use concatenate to make
-        the answer, regardless of what comes before.
+        We check the opposite action of each operation to see if we need to keep
+        pursuing a particular branch. E.g. for "190: 10 19" we could never use
+        concatenate to make the answer, regardless of what comes before.
 
         :param total:
         :param numbers:
