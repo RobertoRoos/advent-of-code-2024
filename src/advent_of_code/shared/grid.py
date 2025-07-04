@@ -25,6 +25,9 @@ class RowCol:
     def __sub__(self, other: Self) -> Self:
         return RowCol(row=self.row - other.row, col=self.col - other.col)
 
+    def __mul__(self, other: int) -> Self:
+        return RowCol(row=self.row * other, col=self.col * other)
+
     def __iadd__(self, other: Self) -> Self:
         self.col += other.col
         self.row += other.row

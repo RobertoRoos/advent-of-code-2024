@@ -19,10 +19,15 @@ class TestDay08(AdventTestCase):
         result = solver()
         self.assertEqual("4", result)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("xxx", result)
+    def test_sample_part_2(self):
+        solver = self.get_solver(2)
+        result = solver()
+        self.assertEqual("34", result)
+
+    def test_sample_part_2_small(self):
+        solver = self.get_solver(2, input_file="sample_input_small_2.txt")
+        result = solver()
+        self.assertEqual("9", result)
 
 
 if __name__ == "__main__":

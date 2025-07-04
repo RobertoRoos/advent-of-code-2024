@@ -20,24 +20,29 @@ class Day08(Solver):
 
         anti_nodes: Set[RowCol] = set()
 
+        limits = (1, 1) if self.args.part == 1 else (0, grid.rows)
+
         for nodes in signals.values():
             # Combine all pairs of nodes:
             for i1, node_1 in enumerate(nodes):
                 for node_2 in nodes[i1 + 1 :]:
                     step = node_2.loc - node_1.loc
-                    new_anti_nodes = [
-                        node_1.loc - step,
-                        node_2.loc + step,
-                    ]
 
-                    for new_anti_node in new_anti_nodes:
-                        if grid.in_range(new_anti_node):
-                            anti_nodes.add(new_anti_node)
+                    for i in range(limits[0], limits[1] + 1):
+                        new_anti_nodes = [
+                            node_1.loc - step * i,
+                            node_2.loc + step * i,
+                        ]
 
-        # test_grid = grid.copy()
-        # for anti_node in anti_nodes:
-        #     test_grid.items[anti_node] = GridItem(loc=anti_node, character="#")
-        # test_grid.print()
+                        still_good = False  # Still something in range of the grid
+
+                        for new_anti_node in new_anti_nodes:
+                            if grid.in_range(new_anti_node):
+                                anti_nodes.add(new_anti_node)
+                                still_good = True
+
+                        if not still_good:
+                            break
 
         return str(len(anti_nodes))
 
