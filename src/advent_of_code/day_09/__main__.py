@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import List, Self
+from typing import Self
+
+from sortedcontainers import SortedList
 
 from advent_of_code.shared import Solver, main
 
@@ -24,6 +26,13 @@ class Block:
     def copy(self) -> Self:
         return Block(start=self.start, length=self.length, name=self.name)
 
+    def __lt__(self, other: Self) -> bool:
+        """Comparison operator."""
+        return self.start < other.start
+
+
+BlockList = SortedList[Block]
+
 
 class Day09(Solver):
 
@@ -34,30 +43,39 @@ class Day09(Solver):
         position = 0
         identification = 0
         full = True
-        blocks: List[Block] = []
+        blocks: BlockList = SortedList()
         for c in line.strip():
             number = int(c)
             if not full:
                 full = True
             else:
                 block = Block(start=position, length=number, name=identification)
-                blocks.append(block)
+                blocks.add(block)
                 identification += 1
                 full = False
 
             position += number
 
-        # self.print_block(blocks)
+        if self.args.part == 1:
+            compacted_blocks = self.compact_blocks_by_byte(blocks)
+        else:
+            compacted_blocks = self.compact_blocks_whole(blocks)
 
+        value = self.checksum(compacted_blocks)
+
+        return str(value)
+
+    @staticmethod
+    def compact_blocks_by_byte(blocks: BlockList) -> BlockList:
         # Now to do the compacting:
-        compacted_blocks: List[Block] = []
+        compacted_blocks: BlockList = SortedList()
         position = 0  # Byte position in the original blocks list
 
         while len(blocks) > 0:
             # Find the next gap in the original list:
             while len(blocks) > 1 and blocks[0].in_range(position):
                 block = blocks.pop(0)
-                compacted_blocks.append(block)
+                compacted_blocks.add(block)
                 position += block.length
 
             # Keep filling this gap:
@@ -74,17 +92,39 @@ class Day09(Solver):
                     block = Block(start=position, length=gap_size, name=old_block.name)
                     old_block.length -= gap_size
 
-                compacted_blocks.append(block)
+                compacted_blocks.add(block)
                 position += block.length
 
-            # self.print_block(compacted_blocks)
-
-        value = self.checksum(compacted_blocks)
-
-        return str(value)
+        return compacted_blocks
 
     @staticmethod
-    def checksum(blocks: List[Block]) -> int:
+    def compact_blocks_whole(blocks: BlockList) -> BlockList:
+
+        tail_idx = len(blocks) - 1
+
+        while tail_idx > 0:
+            block_tail: Block = blocks[tail_idx]
+            # Look for a better space for this block:
+            moved = False
+            for block_1, block_2 in zip(blocks[:-1], blocks[1:]):
+                if block_2.start > block_tail.start:
+                    break  # Already past the block in question
+
+                gap_size = block_2.start - block_1.end
+                if block_tail.length <= gap_size:
+                    blocks.pop(tail_idx)
+                    block_tail.start = block_1.end
+                    blocks.add(block_tail)
+                    moved = True
+                    break
+
+            if not moved:
+                tail_idx -= 1  # Couldn't move this last item
+
+        return blocks
+
+    @staticmethod
+    def checksum(blocks: BlockList) -> int:
         """Get weird checksum."""
         checksum = 0
         for block in blocks:
@@ -93,7 +133,7 @@ class Day09(Solver):
         return checksum
 
     @staticmethod
-    def print_block(blocks: List[Block]):
+    def print_block(blocks: BlockList):
         position = 0
         block_idx = 0
         print()
