@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Self, Tuple, TypeVar
+from typing import Any, Dict, Iterable, List, Self, Tuple, TypeVar
 
 from bidict import bidict
 
@@ -58,6 +58,13 @@ class RowCol:
             return RowCol(self.row + 1, self.col)
         return RowCol(self.row, self.col - 1)
 
+    def neighbours(self) -> Iterable[Self]:
+        """Yield the neighbours of this location."""
+        yield RowCol(row=self.row + 1, col=self.col)
+        yield RowCol(row=self.row, col=self.col + 1)
+        yield RowCol(row=self.row - 1, col=self.col)
+        yield RowCol(row=self.row, col=self.col - 1)
+
 
 class GridItem:
     """Base class for an item in a grid.
@@ -75,6 +82,7 @@ class GridItem:
         self.character = character
         self.loc: RowCol | None = loc
         self.direction: Direction | None = None
+        self.data: Dict[Any, Any] = {}
 
 
 class Grid:
@@ -158,12 +166,24 @@ class Grid:
 
         return None
 
-    def print(self):
+    def neighbours(self, tile: GridItem) -> Iterable[GridItem]:
+        """Loop over the neighbouring tiles, where they exist."""
+        for next_loc in tile.loc.neighbours():
+            if next_loc in self.items:
+                yield self.items[next_loc]
+
+    def print(self, data_key: None | str = None, end: str = ""):
         print()
         for row in range(self.rows):
             for col in range(self.cols):
                 loc = RowCol(row=row, col=col)
-                char = self.items[loc].character if loc in self.items else "."
-                print(char, end="")
+                item = self.items.get(loc, None)
+                if item is None:
+                    char = "."
+                elif data_key is None:
+                    char = item.character
+                else:
+                    char = item.data[data_key]
+                print(char, end=end)
             print()
         print()
