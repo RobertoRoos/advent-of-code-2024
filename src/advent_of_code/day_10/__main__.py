@@ -24,8 +24,10 @@ class Day10(Solver):
             items_by_value[val].append(item)
 
             item.data["ends"]: Set[RowCol] = set()  # Set of 9s that can be reached
+            item.data["paths"]: int = 0  # Number of distinct paths to a 9
             if val == 9:
                 item.data["ends"].add(item.loc)
+                item.data["paths"] = 1
 
         # Go backwards from 9 to 0, keeping count of the tiles you can reach from there
         for value in range(9, -1, -1):
@@ -36,11 +38,16 @@ class Day10(Solver):
                         neighbour.data["ends"] = neighbour.data["ends"].union(
                             item.data["ends"]
                         )
+                        neighbour.data["paths"] += item.data["paths"]
 
         scores_total = 0
 
         for item in items_by_value[0]:
-            this_score = len(item.data["ends"])
+            if self.args.part == 1:
+                this_score = len(item.data["ends"])
+            else:
+                this_score = item.data["paths"]
+
             scores_total += this_score
 
         return str(scores_total)
