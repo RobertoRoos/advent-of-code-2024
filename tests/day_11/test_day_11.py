@@ -14,10 +14,7 @@ class TestDay11(AdventTestCase):
         result = solver()
         self.assertEqual("55312", result)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("", result)
+    # Part 2 has no known sample output!
 
 
 if __name__ == "__main__":
