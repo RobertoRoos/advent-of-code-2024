@@ -172,6 +172,28 @@ class Grid:
             if next_loc in self.items:
                 yield self.items[next_loc]
 
+    def find_region(
+        self, tile: GridItem, region: None | Dict[RowCol, GridItem] = None
+    ) -> Dict[RowCol, GridItem]:
+        """Return list of all recursive neighbours with the same character.
+
+        :return: Dict like {"loc": "item"}
+        """
+        if region is None:
+            region = {}
+
+        region[tile.loc] = tile
+
+        for neighbour in self.neighbours(tile):
+            if neighbour.character == tile.character:
+                if neighbour.loc in region:
+                    continue  # This neighbour is already considered in the region,
+                    # prevent duplicate
+
+                region = self.find_region(neighbour, region)
+
+        return region
+
     def print(self, data_key: None | str = None, end: str = ""):
         print()
         for row in range(self.rows):

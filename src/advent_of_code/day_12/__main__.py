@@ -1,7 +1,7 @@
-from typing import List, Set, Tuple, Dict
 from collections import defaultdict
+from typing import List, Set
 
-from advent_of_code.shared import Solver, main, Grid, GridItem, RowCol
+from advent_of_code.shared import Grid, RowCol, Solver, main
 
 
 class Day12(Solver):
@@ -19,11 +19,10 @@ class Day12(Solver):
         regions_by_char = self.find_regions()
 
         total_score = 0
-        for char, regions in regions_by_char.items():
+        for regions in regions_by_char.values():
             for region in regions:
                 this_score = self.calculate_score(region)
                 total_score += this_score
-                print(f"Region {char}: {this_score}")
 
         return str(total_score)
 
@@ -32,24 +31,17 @@ class Day12(Solver):
         # List of sets, each representing one region
         regions_by_char: defaultdict[str, List[Set[RowCol]]] = defaultdict(list)
 
-        # Loop over all items:
-        for loc, item in self.garden.items.items():
-            # Loop over all the neighbouring items to find an existing region:
-            this_region = None
-            for neighbour in self.garden.neighbours(item):
-                # Iterate over existing regions to find a match:
-                for region in regions_by_char[item.character]:
-                    if neighbour.loc in region:
-                        this_region = region  # Reference to existing one
-                        break
+        unsorted_locs = {it.loc for it in self.garden.items.values()}  # Make copy
 
-                if this_region is not None:
-                    this_region.add(item.loc)
-                    break  # Stop checking neighbours
+        while len(unsorted_locs) > 0:  # Consume entire list
+            this_loc = next(iter(unsorted_locs))
+            this_item = self.garden.items[this_loc]
 
-            if this_region is None:
-                # Start a new region then:
-                regions_by_char[item.character].append({item.loc})
+            region_dict = self.garden.find_region(this_item)
+            region_set = set(region_dict.keys())
+            unsorted_locs -= region_set
+
+            regions_by_char[this_item.character].append(region_set)
 
         return regions_by_char
 
