@@ -65,6 +65,27 @@ class RowCol:
         yield RowCol(row=self.row - 1, col=self.col)
         yield RowCol(row=self.row, col=self.col - 1)
 
+    @staticmethod
+    def get_bounds(
+        items: Iterable["RowCol"],
+    ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        """Get outer bounds of a set of items."""
+        rows_range_min, rows_range_max = None, None
+        cols_range_min, cols_range_max = None, None
+
+        # Determine bounds:
+        for loc in items:
+            if rows_range_min is None or loc.row < rows_range_min:
+                rows_range_min = loc.row
+            if rows_range_max is None or loc.row > rows_range_max:
+                rows_range_max = loc.row
+            if cols_range_min is None or loc.col < cols_range_min:
+                cols_range_min = loc.col
+            if cols_range_max is None or loc.col > cols_range_max:
+                cols_range_max = loc.col
+
+        return (rows_range_min, rows_range_max), (cols_range_min, cols_range_max)
+
 
 class GridItem:
     """Base class for an item in a grid.
