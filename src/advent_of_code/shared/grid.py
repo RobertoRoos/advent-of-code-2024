@@ -86,6 +86,21 @@ class RowCol:
 
         return (rows_range_min, rows_range_max), (cols_range_min, cols_range_max)
 
+    @staticmethod
+    def from_str(text: str) -> "RowCol":
+        """Turn a string like `5,1` into a row-col object."""
+        values = text.split(",")
+        if len(values) != 2:
+            raise ValueError(f"Text {text} does not contain two coordinates")
+
+        values = [int(v) for v in values]
+
+        return RowCol(row=values[0], col=values[1])
+
+    def transpose(self) -> Self:
+        """Get version with row / column flipped."""
+        return RowCol(row=self.col, col=self.row)
+
 
 class GridItem:
     """Base class for an item in a grid.
