@@ -80,6 +80,8 @@ class Day13(Solver):
             elif name == "Button B":
                 new_game.button_b = xy
             elif name == "Prize":
+                if self.args.part == 2:
+                    xy = (xy[0] + 10000000000000, xy[1] + 10000000000000)
                 new_game.prize = xy
                 games.append(new_game)
             else:
