@@ -56,7 +56,9 @@ class RowCol:
             return RowCol(self.row, self.col + 1)
         if direction == Direction.SOUTH:
             return RowCol(self.row + 1, self.col)
-        return RowCol(self.row, self.col - 1)
+        if direction == Direction.WEST:
+            return RowCol(self.row, self.col - 1)
+        raise ValueError(f"Unrecognized direction `{direction}`")
 
     def neighbours(self) -> Iterable[Self]:
         """Yield the neighbours of this location."""
@@ -106,7 +108,9 @@ class RowCol:
             return RowCol(row=0, col=1)
         if direction == Direction.SOUTH:
             return RowCol(row=1, col=0)
-        return RowCol(row=0, col=-1)
+        if direction == Direction.WEST:
+            return RowCol(row=0, col=-1)
+        raise ValueError(f"Unrecognized direction `{direction}`")
 
     def transpose(self) -> Self:
         """Get version with row / column flipped."""
@@ -130,6 +134,9 @@ class GridItem:
         self.loc: RowCol | None = loc
         self.direction: Direction | None = None
         self.data: Dict[Any, Any] = {}
+
+    def __repr__(self) -> str:
+        return f"GridItem('{self.character}', row={self.loc.row}, col={self.loc.col})"
 
 
 class Grid:
