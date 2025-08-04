@@ -97,6 +97,17 @@ class RowCol:
 
         return RowCol(row=values[0], col=values[1])
 
+    @staticmethod
+    def from_direction(direction: Direction) -> "RowCol":
+        """Create a difference RowCol based on a direction."""
+        if direction == Direction.NORTH:
+            return RowCol(row=-1, col=0)
+        if direction == Direction.EAST:
+            return RowCol(row=0, col=1)
+        if direction == Direction.SOUTH:
+            return RowCol(row=1, col=0)
+        return RowCol(row=0, col=-1)
+
     def transpose(self) -> Self:
         """Get version with row / column flipped."""
         return RowCol(row=self.col, col=self.row)
@@ -184,6 +195,9 @@ class Grid:
             raise KeyError(f"Could not find item `{character}`")
 
         return item_found
+
+    def add(self, item: GridItem):
+        self.items[item.loc] = item
 
     def remove(self, item: GridItem):
         self.items.inverse.pop(item)
