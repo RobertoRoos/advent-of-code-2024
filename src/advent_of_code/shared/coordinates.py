@@ -62,3 +62,20 @@ class Direction(StrEnum):
 
             if next_direction == starting_direction:
                 break
+
+    def turns(self, other: Self, go_negative: bool = False) -> int:
+        """Return number of turns (0, 1, 2 or 3) between this direction and the other.
+
+        Counting clockwise. E.g. ``Direction.EAST.turns(Direction.SOUTH)`` will return
+        ``1``.
+        """
+        this = Direction(self)
+        turns = 0
+        while this != other:
+            this = this.rotate(clockwise=True)
+            turns += 1
+
+        if not go_negative:
+            return turns
+
+        return -1 if turns == 3 else turns
