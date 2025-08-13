@@ -39,12 +39,15 @@ class Day16(Solver):
 
         tile_scores[start.loc][start.direction] = 0
 
-        still_changing = True
-        while still_changing:
-            still_changing = False
+        updated_scores = {start.loc}  # Avoid checking every single tile again
+        # Instead we only need to consider locations where we changed something
+
+        while updated_scores:
+
+            updated_scores_next_loop = set()
 
             # Loop over every tile that we already have a score for
-            for loc in list(tile_scores):
+            for loc in updated_scores:
                 direction_scores = tile_scores[loc]
                 # Loop over copy of dict keys to allow resizing
 
@@ -69,7 +72,9 @@ class Day16(Solver):
                         or new_score < tile_scores[neighbour_loc][next_direction]
                     ):
                         tile_scores[neighbour_loc][next_direction] = new_score
-                        still_changing = True
+                        updated_scores_next_loop.add(neighbour_loc)
+
+            updated_scores = updated_scores_next_loop
 
         scores_end = tile_scores[end.loc]
 

@@ -19,6 +19,11 @@ class TestDay16(AdventTestCase):
         result = solver()
         self.assertEqual("11048", result)
 
+    def test_sample_part_1_basic(self):
+        solver = self.get_solver(1, input_file="input_basic.txt")
+        result = solver()
+        self.assertEqual("2007", result)
+
     # def test_sample_part_2(self):
     #     solver = self.get_solver(2)
     #     result = solver()
