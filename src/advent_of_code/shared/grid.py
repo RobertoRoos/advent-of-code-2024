@@ -251,18 +251,22 @@ class Grid:
 
         return region
 
-    def print(self, data_key: None | str = None, end: str = ""):
+    def print(self, data_key: None | str = None, end: str = "", padding: int = 0):
         print()
         for row in range(self.rows):
             for col in range(self.cols):
                 loc = RowCol(row=row, col=col)
                 item = self.items.get(loc, None)
                 if item is None:
-                    char = "."
+                    txt = "."
                 elif data_key is None:
-                    char = item.character
+                    txt = item.character
                 else:
-                    char = item.data[data_key]
-                print(char, end=end)
+                    txt = item.data[data_key]
+                txt = str(txt)
+                if padding > 0 and len(txt) < padding:
+                    str_pad = "".join([" "] * (padding - len(txt)))
+                    txt = str_pad + txt
+                print(txt, end=end)
             print()
         print()

@@ -24,6 +24,11 @@ class TestDay16(AdventTestCase):
         result = solver()
         self.assertEqual("2007", result)
 
+    def test_sample_part_1_zigzag(self):
+        solver = self.get_solver(1, input_file="input_zigzag.txt")
+        result = solver()
+        self.assertEqual("3019", result)
+
     # def test_sample_part_2(self):
     #     solver = self.get_solver(2)
     #     result = solver()
