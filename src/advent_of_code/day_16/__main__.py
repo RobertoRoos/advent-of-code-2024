@@ -1,6 +1,6 @@
 from collections import defaultdict
 from heapq import heappop, heappush
-from typing import DefaultDict, Dict, List, Tuple
+from typing import DefaultDict, Dict, List, Tuple, Set
 
 from advent_of_code.shared import Direction, Grid, GridItem, RowCol, Solver, main
 
@@ -30,25 +30,6 @@ class Day16(Solver):
 
         return str(score)
 
-    def find_new_direction(
-        self, direction: Direction, options: Dict[Direction, int]
-    ) -> int:
-        """Return the cost of a new direction based on a list of options."""
-        if direction in options:
-            return options[direction]
-
-        best_score = None
-
-        for option_direction, option_score in options.items():
-            new_score = option_score + self.COST_TURN * abs(
-                option_direction.turns(direction, go_negative=True)
-            )
-
-            if best_score is None or new_score < best_score:
-                best_score = new_score
-
-        return best_score
-
     def get_lowest_score_queue(self, start: GridItem, end: GridItem) -> int:
         """Use Dijkstra's to find the best path."""
         random_counter = 0
@@ -66,7 +47,12 @@ class Day16(Solver):
         # Entries are like `{<loc>: {<direction>: <score>}}", with <score> the
         # sum of cost
 
-        while len(path_queue) > 0:
+        optimal_score: None | int = None
+        # Track the score we would return
+
+        all_path_tiles: Set[RowCol] = set()
+
+        while path_queue:
             # Consume the lowest-score option from the queue:
             this_score, _, this_path = heappop(path_queue)
 
@@ -74,8 +60,18 @@ class Day16(Solver):
             tip_direction: Direction
             tip_loc, tip_direction = this_path[-1]  # Find where this path ends
 
-            if tip_loc == end.loc:
-                return best_scores[tip_loc][tip_direction]
+            if tip_loc == end.loc:  # Found the (first of multiple) optimal path(s)
+                if self.args.part == 1:
+                    # Just return the score of the best path:
+                    return this_score
+
+                if optimal_score is None:
+                    optimal_score = this_score
+
+                if optimal_score is not None and this_score == optimal_score:
+                    # Found a path that is the optimal path or just as good
+                    all_path_tiles |= set(l for l, _ in this_path)
+                    pass
 
             # Check 4 possible directions:
             for next_direction in Direction:
@@ -102,6 +98,9 @@ class Day16(Solver):
                         (next_score, random_counter, next_path),
                     )
                     random_counter += 1
+
+        if self.args.part == 2:
+            return len(all_path_tiles)
 
         raise RuntimeError("Failed to find path")
 
