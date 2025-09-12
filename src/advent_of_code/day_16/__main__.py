@@ -1,6 +1,6 @@
 from collections import defaultdict
 from heapq import heappop, heappush
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Set
 
 from advent_of_code.shared import Direction, Grid, GridItem, RowCol, Solver, main
 
@@ -63,6 +63,8 @@ class Day16(Solver):
         heappush(tiles_queue, (0, random_counter, start.loc, start.direction))
         random_counter += 1
         scores[start.loc][start.direction] = 0
+        best_score = None
+        all_path_tiles: Set[RowCol] = set()  # All locations touched in any optimal path
 
         while tiles_queue:
             tip_score, _, tip_loc, tip_direction = heappop(tiles_queue)
@@ -90,30 +92,55 @@ class Day16(Solver):
                     )
                     random_counter += 1
 
+                    if best_score is None and next_loc == end.loc:
+                        best_score = next_score
+
+                if best_score is not None and next_loc == end.loc and next_score == best_score:
+                    # This path is (also) a good one!
+                    for step in self.parse_path(scores, prev, end):
+                        all_path_tiles.add(step[0])
+
+                    self.debug_print_route(scores, prev, end)
+
+                    pass
+
         # self.debug_print_route(scores, prev, end)
 
-        return min(scores[end.loc].values())
+        if self.args.part == 1:
+            return min(scores[end.loc].values())
+        else:
+            return len(all_path_tiles)
 
-    def debug_print_route(self, scores, prev, end: GridItem):
-        """Visually print the solved path."""
+    @staticmethod
+    def parse_path(scores, prev, end: GridItem) -> List[Tuple[RowCol, Direction]]:
+        """Takes the Dijkstra `prev` list and resolve to a list of locations."""
         end_scores = scores[end.loc]
         end_direction = min(end_scores, key=end_scores.get)
         # ^ Direction on the 'end' tile
         this_step = prev[end.loc][end_direction]
 
-        print_grid = Grid()
-        print_grid.rows = self.grid.rows
-        print_grid.cols = self.grid.cols
+        steps: List[Tuple[RowCol, Direction]] = []
 
         while this_step is not None:
-            this_step_tile = GridItem(character="+", loc=this_step[0])
-            this_step_tile.data["score"] = scores[this_step[0]][this_step[1]]
-            print_grid.add(this_step_tile)
-
             try:
                 this_step = prev[this_step[0]][this_step[1]]
             except KeyError:
                 this_step = None
+            else:
+                steps.insert(0, this_step)
+
+        return steps
+
+    def debug_print_route(self, scores, prev, end: GridItem):
+        """Visually print the solved path."""
+        print_grid = Grid()
+        print_grid.rows = self.grid.rows
+        print_grid.cols = self.grid.cols
+
+        for this_step in self.parse_path(scores, prev, end):
+            this_step_tile = GridItem(character="+", loc=this_step[0])
+            this_step_tile.data["score"] = scores[this_step[0]][this_step[1]]
+            print_grid.add(this_step_tile)
 
         self.grid.print()
         print()
