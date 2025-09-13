@@ -54,6 +54,7 @@ class Day16(Solver):
 
         while path_queue:
             # Consume the lowest-score option from the queue:
+
             this_score, _, this_path = heappop(path_queue)
 
             tip_loc: RowCol
@@ -61,6 +62,7 @@ class Day16(Solver):
             tip_loc, tip_direction = this_path[-1]  # Find where this path ends
 
             if tip_loc == end.loc:  # Found the (first of multiple) optimal path(s)
+
                 if self.args.part == 1:
                     # Just return the score of the best path:
                     return this_score
@@ -83,13 +85,19 @@ class Day16(Solver):
                 if next_tile is not None and next_tile.character == "#":
                     continue  # Cannot go this way, skip
 
+                if next_loc in [l for l, _ in this_path]:
+                    continue  # We started making a loop, give up here
+                # Not really needed in regular Dijkstra, but we use a lt-or-eq operator,
+                # so this helps
+
                 turns = 0 if next_direction == tip_direction else 1  # Never backwards
                 next_score = this_score + self.COST_STEP + self.COST_TURN * turns
 
                 if (
                     next_direction not in best_scores[next_loc]
-                    or next_score < best_scores[next_loc][next_direction]
-                ):
+                    or next_score <= best_scores[next_loc][next_direction]
+                ): # Use lt-or-eq to also find other good paths
+
                     # Found a better path!
                     next_path = this_path[:] + [(next_loc, next_direction)]
                     best_scores[next_loc][next_direction] = next_score
@@ -115,8 +123,8 @@ class Day16(Solver):
             # this_tile.data["score"] = scores[this_step[0]][this_step[1]]
             print_grid.add(this_tile)
 
-        self.grid.print()
-        print()
+        # self.grid.print()
+        # print()
         print_grid.print()
         print()
         # print_grid.print(data_key="score", padding=8)
