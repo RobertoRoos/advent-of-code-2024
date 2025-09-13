@@ -1,6 +1,6 @@
 from collections import defaultdict
 from heapq import heappop, heappush
-from typing import DefaultDict, Dict, List, Tuple, Set
+from typing import DefaultDict, Dict, List, Set, Tuple
 
 from advent_of_code.shared import Direction, Grid, GridItem, RowCol, Solver, main
 
@@ -72,8 +72,7 @@ class Day16(Solver):
 
                 if optimal_score is not None and this_score == optimal_score:
                     # Found a path that is the optimal path or just as good
-                    all_path_tiles |= set(l for l, _ in this_path)
-                    pass
+                    all_path_tiles |= set(loc for loc, _ in this_path)
 
             # Check 4 possible directions:
             for next_direction in Direction:
@@ -85,7 +84,7 @@ class Day16(Solver):
                 if next_tile is not None and next_tile.character == "#":
                     continue  # Cannot go this way, skip
 
-                if next_loc in [l for l, _ in this_path]:
+                if next_loc in [loc for loc, _ in this_path]:
                     continue  # We started making a loop, give up here
                 # Not really needed in regular Dijkstra, but we use a lt-or-eq operator,
                 # so this helps
@@ -95,8 +94,12 @@ class Day16(Solver):
 
                 if (
                     next_direction not in best_scores[next_loc]
-                    or next_score <= best_scores[next_loc][next_direction]
-                ): # Use lt-or-eq to also find other good paths
+                    or next_score < best_scores[next_loc][next_direction]
+                    or (
+                        self.args.part == 2
+                        and next_score == best_scores[next_loc][next_direction]
+                    )
+                ):
 
                     # Found a better path!
                     next_path = this_path[:] + [(next_loc, next_direction)]
