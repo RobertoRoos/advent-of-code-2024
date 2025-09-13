@@ -29,10 +29,15 @@ class TestDay16(AdventTestCase):
         result = solver()
         self.assertEqual("3019", result)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("xxx", result)
+    def test_sample_part_2(self):
+        solver = self.get_solver(2)
+        result = solver()
+        self.assertEqual("45", result)
+
+    def test_sample_part_2_larger(self):
+        solver = self.get_solver(2, input_file="sample_input_larger.txt")
+        result = solver()
+        self.assertEqual("64", result)
 
 
 if __name__ == "__main__":

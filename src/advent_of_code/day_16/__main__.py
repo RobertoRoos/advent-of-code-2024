@@ -1,8 +1,10 @@
 from collections import defaultdict
 from heapq import heappop, heappush
-from typing import Dict, List, Tuple
+from typing import DefaultDict, Dict, List, Set, Tuple
 
 from advent_of_code.shared import Direction, Grid, GridItem, RowCol, Solver, main
+
+Path = List[Tuple[RowCol, Direction]]
 
 
 class Day16(Solver):
@@ -28,99 +30,108 @@ class Day16(Solver):
 
         return str(score)
 
-    def find_new_direction(
-        self, direction: Direction, options: Dict[Direction, int]
-    ) -> int:
-        """Return the cost of a new direction based on a list of options."""
-        if direction in options:
-            return options[direction]
-
-        best_score = None
-
-        for option_direction, option_score in options.items():
-            new_score = option_score + self.COST_TURN * abs(
-                option_direction.turns(direction, go_negative=True)
-            )
-
-            if best_score is None or new_score < best_score:
-                best_score = new_score
-
-        return best_score
-
     def get_lowest_score_queue(self, start: GridItem, end: GridItem) -> int:
-        tiles_queue: List[Tuple[int, int, RowCol, Direction]] = []
-        # Entries are like `(<score>, <random counter>, <loc>, <direction>)`
-        # We add the random counter to ensure that sorting will not rely on location
-        # or direction
-        scores = defaultdict(dict)
-        # Entries are like `{<loc>: {<direction>: <score>}}", with <score> the
-        # sum of cost
-        prev = defaultdict(dict)
-        # Entries are like "{<loc>: {<dir>: (<loc_prev>, <dir_prev>)}"
-
+        """Use Dijkstra's to find the best path."""
         random_counter = 0
 
-        heappush(tiles_queue, (0, random_counter, start.loc, start.direction))
+        path_queue: List[Tuple[int, int, Path]] = [
+            (0, random_counter, [(start.loc, start.direction)])
+        ]
+        # Entries are like: `(<score>, <random counter>, <path so far>)`
+        # We add the random counter to ensure that sorting will not rely on location
+        # or direction
         random_counter += 1
-        scores[start.loc][start.direction] = 0
 
-        while tiles_queue:
-            tip_score, _, tip_loc, tip_direction = heappop(tiles_queue)
+        best_scores: DefaultDict[RowCol, Dict[Direction, int]] = defaultdict(dict)
+        # Track the lowest score to get to a point with a certain direction
+        # Entries are like `{<loc>: {<direction>: <score>}}", with <score> the
+        # sum of cost
 
-            # Check all 4 neighbouring tiles:
+        optimal_score: None | int = None
+        # Track the score we would return
+
+        all_path_tiles: Set[RowCol] = set()
+
+        while path_queue:
+            # Consume the lowest-score option from the queue:
+
+            this_score, _, this_path = heappop(path_queue)
+
+            tip_loc: RowCol
+            tip_direction: Direction
+            tip_loc, tip_direction = this_path[-1]  # Find where this path ends
+
+            if tip_loc == end.loc:  # Found the (first of multiple) optimal path(s)
+
+                if self.args.part == 1:
+                    # Just return the score of the best path:
+                    return this_score
+
+                if optimal_score is None:
+                    optimal_score = this_score
+
+                if optimal_score is not None and this_score == optimal_score:
+                    # Found a path that is the optimal path or just as good
+                    all_path_tiles |= set(loc for loc, _ in this_path)
+
+            # Check 4 possible directions:
             for next_direction in Direction:
+                if next_direction == tip_direction.opposite():
+                    continue  # Don't bother doubling back
+
                 next_loc = tip_loc.next(next_direction)
                 next_tile = self.grid.items.get(next_loc, None)
                 if next_tile is not None and next_tile.character == "#":
                     continue  # Cannot go this way, skip
 
-                turns = abs(tip_direction.turns(next_direction, go_negative=True))
-                next_score = tip_score + self.COST_STEP + self.COST_TURN * turns
+                if next_loc in [loc for loc, _ in this_path]:
+                    continue  # We started making a loop, give up here
+                # Not really needed in regular Dijkstra, but we use a lt-or-eq operator,
+                # so this helps
+
+                turns = 0 if next_direction == tip_direction else 1  # Never backwards
+                next_score = this_score + self.COST_STEP + self.COST_TURN * turns
 
                 if (
-                    next_direction not in scores[next_loc]
-                    or next_score < scores[next_loc][next_direction]
+                    next_direction not in best_scores[next_loc]
+                    or next_score < best_scores[next_loc][next_direction]
+                    or (
+                        self.args.part == 2
+                        and next_score == best_scores[next_loc][next_direction]
+                    )
                 ):
+
                     # Found a better path!
-                    scores[next_loc][next_direction] = next_score
-                    prev[next_loc][next_direction] = (tip_loc, tip_direction)
+                    next_path = this_path[:] + [(next_loc, next_direction)]
+                    best_scores[next_loc][next_direction] = next_score
                     heappush(
-                        tiles_queue,
-                        (next_score, random_counter, next_loc, next_direction),
+                        path_queue,
+                        (next_score, random_counter, next_path),
                     )
                     random_counter += 1
 
-        # self.debug_print_route(scores, prev, end)
+        if self.args.part == 2:
+            return len(all_path_tiles)
 
-        return min(scores[end.loc].values())
+        raise RuntimeError("Failed to find path")
 
-    def debug_print_route(self, scores, prev, end: GridItem):
+    def debug_print_route(self, path: Path):
         """Visually print the solved path."""
-        end_scores = scores[end.loc]
-        end_direction = min(end_scores, key=end_scores.get)
-        # ^ Direction on the 'end' tile
-        this_step = prev[end.loc][end_direction]
-
         print_grid = Grid()
         print_grid.rows = self.grid.rows
         print_grid.cols = self.grid.cols
 
-        while this_step is not None:
-            this_step_tile = GridItem(character="+", loc=this_step[0])
-            this_step_tile.data["score"] = scores[this_step[0]][this_step[1]]
-            print_grid.add(this_step_tile)
+        for this_loc, _ in path:
+            this_tile = GridItem(character="+", loc=this_loc)
+            # this_tile.data["score"] = scores[this_step[0]][this_step[1]]
+            print_grid.add(this_tile)
 
-            try:
-                this_step = prev[this_step[0]][this_step[1]]
-            except KeyError:
-                this_step = None
-
-        self.grid.print()
-        print()
+        # self.grid.print()
+        # print()
         print_grid.print()
         print()
-        print_grid.print(data_key="score", padding=8)
-        print()
+        # print_grid.print(data_key="score", padding=8)
+        # print()
 
 
 if __name__ == "__main__":
