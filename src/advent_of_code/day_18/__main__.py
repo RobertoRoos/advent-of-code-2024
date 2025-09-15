@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from advent_of_code.shared import (
     Direction,
@@ -9,6 +9,8 @@ from advent_of_code.shared import (
     Solver,
     main,
 )
+
+Path = List[RowCol]
 
 
 class Day18(Solver):
@@ -26,27 +28,44 @@ class Day18(Solver):
     def __call__(self) -> str:
 
         i = 0
+        obstacles: List[GridItem] = []
         for line in self.iterate_input():
-            if (i := i + 1) > self.BYTE_LIMIT:
-                break
-
             coord_x, _, coord_y = line.strip().partition(",")
             coord_x, coord_y = int(coord_x), int(coord_y)
             item = GridItem(loc=RowCol(coord_y, coord_x), character="#")
-            self.grid.add(item)
+            obstacles.append(item)
 
-        result = self.find_shorest_path(
-            start=RowCol(0, 0), goal=RowCol(self.GRID_SIZE, self.GRID_SIZE)
-        )
+        start = RowCol(0, 0)
+        goal = RowCol(self.GRID_SIZE, self.GRID_SIZE)
 
-        return str(result)
+        if self.args.part == 1:
+            for i in range(self.BYTE_LIMIT):
+                self.grid.add(obstacles[i])
 
-    def find_shorest_path(self, start: RowCol, goal: RowCol) -> int:
+            result, _ = self.find_shorest_path(start, goal)
+            return str(result)
+
+        else:
+            path_so_far = None
+            for _index, obstacle in enumerate(obstacles):
+                self.grid.add(obstacle)
+
+                if path_so_far is not None and obstacle.loc not in path_so_far:
+                    continue  # No need to check validity, already walking around it
+
+                try:
+                    _, path_so_far = self.find_shorest_path(start, goal)
+                except RuntimeError:
+                    return f"{obstacle.loc.col},{obstacle.loc.row}"  # X,Y vs row,col
+
+            raise RuntimeError("Couldn't find limiting block!")
+
+    def find_shorest_path(self, start: RowCol, goal: RowCol) -> Tuple[int, Path]:
         """Return length of the shortest path through the maze.
 
         Uses a kind of Dijkstras, with a sorted queue.
         """
-        path_queue = PriorityList[List[RowCol]]()
+        path_queue = PriorityList[Path]()
         path_queue.push(0, [start])  # Path 'tips', prioritized by length so far
 
         best_distances: Dict[RowCol, int] = {}  # Map of shortest route to a location
@@ -56,7 +75,7 @@ class Day18(Solver):
             this_tip = this_path[-1]
 
             if this_tip == goal:
-                return this_distance
+                return this_distance, this_path
 
             # Investigate next paths:
             for direction in Direction:
@@ -79,7 +98,7 @@ class Day18(Solver):
 
         raise RuntimeError("Failed to find solution")
 
-    def print_path(self, path):
+    def print_path(self, path: Path):
         path_grid = Grid()
         path_grid.rows = self.grid.rows
         path_grid.cols = self.grid.cols

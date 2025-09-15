@@ -29,10 +29,13 @@ class TestDay18(AdventTestCase):
         result = solver()
         self.assertEqual("22", result)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("xxx", result)
+    def test_sample_part_2(self):
+        Day18.BYTE_LIMIT = 12  # Reduce limit for this sample
+        Day18.GRID_SIZE = 6
+
+        solver = self.get_solver(2)
+        result = solver()
+        self.assertEqual("6,1", result)
 
 
 if __name__ == "__main__":
