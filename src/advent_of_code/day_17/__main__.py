@@ -88,6 +88,41 @@ class Machine:
 
         return index + 2  # Default increment
 
+    def find_circular_program(self, program: List[int]) -> int:
+        """Find value for `a` such that output equals the program itself.
+
+        We see a pattern that for `a = 8^n` the output has `n + 1` items,
+        regardless of the program.
+        Also, each 'octo-bit' in `a` will change only one or two values in the output
+        list. So to converge to a solution, we find the last digit in the output
+        and the program that are different and then increment `a` with the right
+        exponent of 8.
+        """
+        # Find the lowest meaningful value for register `a`:
+        n = 0
+        output = []
+        while len(output) < len(program):
+            self.a = 8**n
+            output = Machine(self.a, self.b, self.c).do_program(program)
+            n += 1
+
+        # Increment `a` according to the last element that's different:
+        pos = len(program) - 1
+        while output != program:
+            # Find last digit to adjust:
+            for pos in range(len(program) - 1, -1, -1):
+                if program[pos] != output[pos]:
+                    break
+
+            self.a += 8**pos  # Increment the octo-bit of this position
+
+            output = Machine(self.a, self.b, self.c).do_program(program)
+
+            if len(output) > len(program):
+                raise RuntimeError("Not converging to solution")
+
+        return self.a
+
 
 class Day17(Solver):
 
@@ -110,8 +145,13 @@ class Day17(Solver):
                 program = [int(txt) for txt in numbers_str.split(",")]
 
         machine = Machine(*registers)
-        output = machine.do_program(program)
-        return ",".join(str(t) for t in output)
+
+        if self.args.part == 1:
+            output = machine.do_program(program)
+            return ",".join(str(t) for t in output)
+        else:
+            machine.find_circular_program(program)
+            return str(machine.a)
 
 
 if __name__ == "__main__":

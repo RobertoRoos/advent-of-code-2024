@@ -40,10 +40,17 @@ class TestDay17(AdventTestCase):
         result = solver()
         self.assertEqual("4,6,3,5,6,3,5,2,1,0", result)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("xxx", result)
+    def test_part_2_sample(self):
+        solver = self.get_solver(2, input_file="sample_input_part_2.txt")
+        result = solver()
+        self.assertEqual("117440", result)
+
+    def test_part_2_my_input(self):
+        machine = Machine()
+        program = [2, 4, 1, 3, 7, 5, 1, 5, 0, 3, 4, 2, 5, 5, 3, 0]
+        _ = machine.find_circular_program(program)
+        output = machine.do_program(program)
+        self.assertEqual(program, output)
 
 
 if __name__ == "__main__":
