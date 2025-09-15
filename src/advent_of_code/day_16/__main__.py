@@ -1,8 +1,15 @@
 from collections import defaultdict
-from heapq import heappop, heappush
 from typing import DefaultDict, Dict, List, Set, Tuple
 
-from advent_of_code.shared import Direction, Grid, GridItem, RowCol, Solver, main
+from advent_of_code.shared import (
+    Direction,
+    Grid,
+    GridItem,
+    PriorityList,
+    RowCol,
+    Solver,
+    main,
+)
 
 Path = List[Tuple[RowCol, Direction]]
 
@@ -32,15 +39,9 @@ class Day16(Solver):
 
     def get_lowest_score_queue(self, start: GridItem, end: GridItem) -> int:
         """Use Dijkstra's to find the best path."""
-        random_counter = 0
-
-        path_queue: List[Tuple[int, int, Path]] = [
-            (0, random_counter, [(start.loc, start.direction)])
-        ]
-        # Entries are like: `(<score>, <random counter>, <path so far>)`
-        # We add the random counter to ensure that sorting will not rely on location
-        # or direction
-        random_counter += 1
+        path_queue = PriorityList[List[Tuple[RowCol, Direction]]]()
+        path_queue.push(0, [(start.loc, start.direction)])
+        # Entries are like: `[<path so far>]`
 
         best_scores: DefaultDict[RowCol, Dict[Direction, int]] = defaultdict(dict)
         # Track the lowest score to get to a point with a certain direction
@@ -55,10 +56,8 @@ class Day16(Solver):
         while path_queue:
             # Consume the lowest-score option from the queue:
 
-            this_score, _, this_path = heappop(path_queue)
+            this_score, this_path = path_queue.pop()
 
-            tip_loc: RowCol
-            tip_direction: Direction
             tip_loc, tip_direction = this_path[-1]  # Find where this path ends
 
             if tip_loc == end.loc:  # Found the (first of multiple) optimal path(s)
@@ -104,11 +103,7 @@ class Day16(Solver):
                     # Found a better path!
                     next_path = this_path[:] + [(next_loc, next_direction)]
                     best_scores[next_loc][next_direction] = next_score
-                    heappush(
-                        path_queue,
-                        (next_score, random_counter, next_path),
-                    )
-                    random_counter += 1
+                    path_queue.push(next_score, next_path)
 
         if self.args.part == 2:
             return len(all_path_tiles)
