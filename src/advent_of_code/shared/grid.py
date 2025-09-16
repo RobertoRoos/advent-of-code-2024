@@ -117,6 +117,10 @@ class RowCol:
         """Get version with row / column flipped."""
         return RowCol(row=self.col, col=self.row)
 
+    def distance(self, other: Self) -> int:
+        """Get number of horizontal/vertical steps between two points."""
+        return abs(self.row - other.row) + abs(self.col - other.col)
+
 
 Path = List[RowCol]
 
@@ -212,6 +216,9 @@ class Grid:
 
     def remove(self, item: GridItem):
         self.items.inverse.pop(item)
+
+    def remove_location(self, loc: RowCol):
+        self.items.pop(loc)
 
     def in_range(self, loc: RowCol) -> bool:
         """Return true when a locations falls in he grid range."""
