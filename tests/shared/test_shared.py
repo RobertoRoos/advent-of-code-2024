@@ -60,6 +60,27 @@ class TestGrid(unittest.TestCase):
         self.assertEqual([RowCol(row=2, col=1)], grid_keys)
         # This works because the key is actually a reference to the RowCol object
 
+    def test_grid_maze_solution(self):
+        grid = Grid()
+        maze = """
+########
+#...#..#
+#.S##..#
+#.####.#
+#......#
+#####..#
+#..E...#
+########
+"""
+        for line in maze.split():
+            grid.add_str_row(line.strip())
+
+        start = grid.get_item_by_character("S")
+        goal = grid.get_item_by_character("E")
+        path_length, path = grid.find_path(start.loc, goal.loc)
+        # grid.print_path(path)
+        self.assertEqual(11, path_length)
+
 
 if __name__ == "__main__":
     unittest.main()

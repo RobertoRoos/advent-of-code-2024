@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Self, Tuple, TypeVar
+from typing import Any, Dict, Iterable, List, Self, Set, Tuple, TypeVar
 
 from bidict import bidict
 
-from advent_of_code.shared import Direction
+from .coordinates import Direction
+from .priority_list import PriorityList
 
 T = TypeVar("T")
 
@@ -115,6 +116,9 @@ class RowCol:
     def transpose(self) -> Self:
         """Get version with row / column flipped."""
         return RowCol(row=self.col, col=self.row)
+
+
+Path = List[RowCol]
 
 
 class GridItem:
@@ -250,6 +254,64 @@ class Grid:
                 region = self.find_region(neighbour, region)
 
         return region
+
+    def find_path(
+        self, start: RowCol, goal: RowCol, wall_characters: Set[str] | None = None
+    ) -> Tuple[int, Path]:
+        """Find a path through the grid from start goal to some end.
+
+        A lot of puzzles have some kind of maze solving, so we write this in the shared
+        code.
+        This using Dijkstras algorithm directly.
+
+        :return: The length of the shortest path and the path itself
+        """
+        if wall_characters is None:
+            wall_characters = set("#")
+
+        path_queue = PriorityList[Path]()
+        shortest_distances: Dict[RowCol, int] = {}
+
+        path_queue.push(0, [start])
+
+        while path_queue:
+            this_distance, this_path = path_queue.pop()
+            this_loc = this_path[-1]
+
+            if this_loc == goal:
+                return this_distance, this_path
+
+            # Find next options:
+            for direction in Direction:
+                next_loc = this_loc.next(direction)
+                if not self.in_range(next_loc):
+                    continue  # Cannot go this way
+                if next_loc in self.items:
+                    if self.items[next_loc].character in wall_characters:
+                        continue  # Blocked
+
+                next_distance = this_distance + 1
+                if (
+                    next_loc not in shortest_distances
+                    or next_distance < shortest_distances[next_loc]
+                ):
+                    # Found a better path!
+                    shortest_distances[next_loc] = next_distance
+                    path_queue.push(next_distance, this_path[:] + [next_loc])
+
+        raise RuntimeError("Failed to find path")
+
+    def print_path(self, path: Path, char: str = "o"):
+        """Print a path into this grid.
+
+        Any existing tiles might get overwritten!
+        """
+        path_grid = self.copy()
+        for step in path:
+            item = GridItem(loc=step, character=char)
+            path_grid.add(item)
+
+        path_grid.print()
 
     def print(self, data_key: None | str = None, end: str = "", padding: int = 0):
         print()
