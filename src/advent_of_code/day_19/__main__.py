@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, Iterable, List, Set
 
 from advent_of_code.shared import Solver, main
 
@@ -10,7 +10,9 @@ class Day19(Solver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.stock: List[Towel] = []
+        self.stock: Set[Towel] = set()
+        self.stock_lookup = {}
+        self.stock_max = 0
 
     def __call__(self) -> str:
 
@@ -25,40 +27,73 @@ class Day19(Solver):
                 continue
 
             if first_line:
-                # self.stock = [Color.towel_from_str(part) for part in line.split(",")]
-                self.stock = [part.strip() for part in line.split(",")]
+                for part in line.split(","):
+                    part = part.strip()
+                    self.stock.add(part)
+                    self.stock_max = max(self.stock_max, len(part))
             else:
                 # designs.append(Color.towel_from_str(line))
                 designs.append(line.strip())
 
-        number_possible = 0
+        result = 0
 
-        for design in designs:
-            if self.possible_design(design):
-                number_possible += 1
+        if self.args.part == 1:
+            for design in designs:
+                if self.possible_design(design) > 0:
+                    result += 1
 
-        return str(number_possible)
+        else:
+            for design in designs:
+                result += self.possible_design(design)
 
-    def possible_design(self, design: Towel) -> bool:
-        """Return True if a towel design can be made from the stock."""
-        mixes: List[Towel] = [""]
-        # Collection of lists of stock towels that might make the design - effectively
-        # partial 'paths' through the network
+        return str(result)
 
-        while mixes:
+    def possible_design(self, design: Towel) -> int:
+        """Return number of possible designs.
+
+        Use the early return argument to check for any possibility at all.
+
+        We work by tracking how many concurrent options there are for sub-designs of
+        increasing length. This way we don't need to track multiple ways of making
+        partially completed designs, but we just count them.
+        """
+        options_so_far: Dict[int, int] = {0: 1}
+        # Like: `{ <# of colors so far>: <# of options for it, ... }
+        # Collection of how many options there are for these number of colours pinned
+        # already
+
+        options = 0
+
+        while options_so_far:
             # Take a 'path' from the 'queue' to pursue:
-            mix = mixes.pop()  # < This is the design so far
+            option_length = next(iter(options_so_far))
+            option_count = options_so_far.pop(option_length)
 
-            if mix == design:
-                return True
+            if option_length == len(design):
+                if self.args.part == 1:  # Just return on the first already
+                    return 1
+                else:
+                    options += option_count
+                    continue
 
-            design_remaining = design[len(mix) :]
+            design_remaining = design[option_length:]
 
-            for stock_towel in self.stock:
-                if design_remaining.startswith(stock_towel):
-                    mixes.append(mix + stock_towel)  # Next possible bit
+            for stock_option in self.find_stock_towel(design_remaining):
+                new_length = option_length + len(stock_option)
+                if new_length not in options_so_far:
+                    options_so_far[new_length] = option_count
+                else:
+                    options_so_far[new_length] += option_count
 
-        return False
+        return options
+
+    def find_stock_towel(self, pattern: Towel) -> Iterable[Towel]:
+        """Yield the matching stock towels to the start of the given pattern."""
+        i_max = min(self.stock_max, len(pattern)) + 1
+        for i in range(1, i_max):
+            substr = pattern[:i]
+            if substr in self.stock:
+                yield substr
 
 
 if __name__ == "__main__":
