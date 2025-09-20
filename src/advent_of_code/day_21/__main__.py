@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Iterable
 
 from advent_of_code.shared import Direction, RowCol, Solver, main
 
@@ -11,12 +11,20 @@ class Keypad:
     def __init__(self, buttons: Buttons, position: str = "A"):
         self.buttons: Buttons = buttons
         self.loc: RowCol = RowCol(0, 0)
+        self.position: str = ""
         self.move_to(position)
 
     def move_to(self, position: str):
         self.loc = self.buttons[position]
+        self.position = position
 
-    def find_directional_keypad_presses(self, target: str) -> str:
+    def find_button_series(self, buttons: str) -> str:
+        direction_buttons = ""
+        for b in buttons:
+            direction_buttons += self.find_and_press_button(b)
+        return direction_buttons
+
+    def find_and_press_button(self, target: str) -> str:
         """Find the directional keypad presses we'd need to press the target.
 
         This includes the 'activate' press at the end.
@@ -28,45 +36,51 @@ class Keypad:
         for direction in self.find_keypad_directions(target_loc):
             buttons += direction.to_symbol()
 
+        self.loc = target_loc
+        self.position = target
         buttons += "A"
         return buttons
 
-    def find_keypad_directions(self, target: RowCol) -> List[Direction]:
+    def find_keypad_directions(self, target: RowCol) -> Iterable[Direction]:
         """Basic path finding across the keypad."""
-        for north_south_first in [True, False]:
-            loc = self.loc
-            directions = []
-            while loc != target:
-                direction = self.get_direction_from_diff(
-                    target - loc,
-                    north_south_first,
-                )
-                next_loc = loc.next(direction)
-                if next_loc == self.buttons["x"]:
-                    directions = None
-                    break
+        south_west_first = True
+        loc = self.loc
 
-                directions.append(direction)
-                loc = next_loc
+        while loc != target:
+            direction = self.get_direction_from_diff(
+                target - loc,
+                south_west_first,
+            )
+            next_loc = loc.next(direction)
+            if next_loc == self.buttons["x"]:
+                if not south_west_first:
+                    raise RuntimeError("Failed to find path")
+                south_west_first = False
+                continue  # Just start the loop again
+            else:
+                south_west_first = True
 
-            if directions is not None:
-                return directions
-
-        raise RuntimeError("Failed to navigate keypad")
+            yield direction
+            loc = next_loc
 
     @staticmethod
     def get_direction_from_diff(
-        diff: RowCol, north_south_first: bool = True
+        diff: RowCol, south_west_first: bool = True
     ) -> Direction:
-        """Reduce a difference in location to a direction."""
-        if diff.row > 0 and (north_south_first or diff.col == 0):
+        """Reduce a difference in location to a direction.
+
+        We use a little for-sight here: "^" and ">" are closer to "A", so when
+        possible we want to end our sequence with those buttons. So when possible we
+        should prefer "v" and "<" such that they are placed first.
+        """
+        if diff.row > 0 and (south_west_first or diff.col == 0):
             return Direction.SOUTH
-        elif diff.row < 0 and (north_south_first or diff.col == 0):
+        elif diff.col < 0 and (south_west_first or diff.row == 0):
+            return Direction.WEST
+        elif diff.row < 0 and (south_west_first or diff.col == 0):
             return Direction.NORTH
         elif diff.col > 0:
             return Direction.EAST
-        elif diff.col < 0:
-            return Direction.WEST
         else:
             raise ValueError(f"Cannot get a direction from `{diff}`")
 
@@ -114,8 +128,10 @@ class Day21(Solver):
             for keypad in keypads:
                 next_keypad_buttons = ""
                 for c in button_presses[-1]:
-                    next_keypad_buttons += keypad.find_directional_keypad_presses(c)
-                    keypad.move_to(c)
+                    next_keypad_buttons += keypad.find_and_press_button(c)
+
+                if keypad.position != "A":
+                    raise RuntimeError("Keypad hasn't returned to A position!")
 
                 button_presses.append(next_keypad_buttons)
 
