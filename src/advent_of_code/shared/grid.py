@@ -121,6 +121,18 @@ class RowCol:
         """Get number of horizontal/vertical steps between two points."""
         return abs(self.row - other.row) + abs(self.col - other.col)
 
+    def directions_to(self, other: Self) -> Iterable[Direction]:
+        """Get the directions (one or two) towards another point."""
+        diff = other - self
+        if diff.row > 0:
+            yield Direction.SOUTH
+        if diff.row < 0:
+            yield Direction.NORTH
+        if diff.col > 0:
+            yield Direction.EAST
+        if diff.col < 0:
+            yield Direction.WEST
+
 
 Path = List[RowCol]
 

@@ -1,4 +1,6 @@
 import unittest
+from collections import defaultdict
+from itertools import product
 
 from advent_of_code.day_21.__main__ import Day21, Keypad
 
@@ -26,6 +28,112 @@ class TestDay21(AdventTestCase):
         buttons = pad.find_and_press_button("7")
         self.assertEqual("^<^^A", buttons)
         # End with "^", not with "<"
+
+    def test_find_all(self):
+        pad = Keypad(Day21.KEYPAD_NUMERIC)
+        paths = list(pad.find_all_keypad_direction_buttons("2"))
+        self.assertEqual(2, len(paths))
+        paths = list(pad.find_all_keypad_direction_buttons("3"))
+        self.assertEqual(1, len(paths))
+        paths = list(pad.find_all_keypad_direction_buttons("4"))
+        self.assertEqual(5, len(paths))
+        paths = list(pad.find_all_keypad_direction_buttons("7"))
+        self.assertEqual(9, len(paths))
+
+    def test_debugging(self):
+        pad1 = Keypad(Day21.KEYPAD_NUMERIC)
+        pad2 = Keypad(Day21.KEYPAD_DIRECTIONAL)
+        pad3 = Keypad(Day21.KEYPAD_DIRECTIONAL)
+
+        all_paths = []
+
+        for path1 in pad1.find_all_keypad_direction_buttons("2"):
+            for button1 in path1:
+                for path2 in pad2.find_all_keypad_direction_buttons(button1):
+                    for button2 in path2:
+                        for path3 in pad3.find_all_keypad_direction_buttons(button2):
+                            all_paths.append((path1, path2, path3))
+
+        return
+
+    def test_debugging_2(self):
+        pad1 = Keypad(Day21.KEYPAD_DIRECTIONAL)
+        pad2 = Keypad(Day21.KEYPAD_DIRECTIONAL)
+        pad3 = Keypad(Day21.KEYPAD_DIRECTIONAL)
+
+        all_paths = {}
+
+        for button_from in Day21.KEYPAD_DIRECTIONAL.keys():
+            for button_to in Day21.KEYPAD_DIRECTIONAL.keys():
+                if button_to == button_from or button_to == "x" or button_from == "x":
+                    continue
+
+                all_paths[(button_from, button_to)] = {}
+
+                pad1.move_to(button_from)
+                for path1 in pad1.find_all_keypad_direction_buttons(button_to):
+                    path1 += "A"
+
+                    all_paths[(button_from, button_to)][path1] = {}
+
+                    for path1_button in path1:
+
+                        for path2 in pad2.find_all_keypad_direction_buttons(path1_button):
+                            path2 += "A"
+
+                            all_paths[(button_from, button_to)][path1][path2] = []
+
+                            for path2_button in path2:
+
+                                for path3 in pad3.find_all_keypad_direction_buttons(path2_button):
+                                    path3 += "A"
+
+                                    all_paths[(button_from, button_to)][path1][path2].append(path3)
+
+                                pad3.move_to(path2_button)
+
+                        pad2.move_to(path1_button)
+
+                pass
+
+        return
+
+    def test_debugging_3(self):
+        all_directional_paths = defaultdict(dict)
+
+        pad = Keypad(Day21.KEYPAD_DIRECTIONAL)
+
+        for button_from in Day21.KEYPAD_DIRECTIONAL.keys():
+            for button_to in Day21.KEYPAD_DIRECTIONAL.keys():
+                if button_to == "x" or button_from == "x":
+                    continue
+
+                pad.move_to(button_from)
+                paths = []
+                for path in pad.find_all_keypad_direction_buttons(button_to):
+                    path += "A"
+                    paths.append(path)
+
+                all_directional_paths[button_from][button_to] = paths
+
+        combinations_list = [
+            paths
+            for to in all_directional_paths.values()
+            for paths in to.values()
+        ]
+
+        all_strategy_paths = []
+
+        for strategy in product(*combinations_list):
+            strategy_directional_paths = defaultdict(dict)
+            i = 0
+            for button_from, to_list in all_directional_paths.items():
+                for button_to in to_list.keys():
+                    strategy_directional_paths[button_from][button_to] = strategy[i]
+                    i += 1
+            all_strategy_paths.append(strategy_directional_paths)
+
+        return
 
     def test_consecutive_keypads(self):
         keypad_1 = Keypad(Day21.KEYPAD_NUMERIC)

@@ -1,6 +1,7 @@
-from typing import Dict, List, Iterable
+from collections import defaultdict
+from typing import Dict, List, Iterable, Tuple
 
-from advent_of_code.shared import Direction, RowCol, Solver, main
+from advent_of_code.shared import Direction, RowCol, Solver, main, PriorityList
 
 Buttons = Dict[str, RowCol]
 
@@ -62,6 +63,27 @@ class Keypad:
 
             yield direction
             loc = next_loc
+
+    def find_all_keypad_direction_buttons(self, button: str) -> Iterable[str]:
+        directions_queue = PriorityList[Tuple[RowCol, List[Direction]]]()
+        directions_queue.push(0, (self.loc, []))
+
+        target = self.buttons[button]
+
+        while directions_queue:
+            this_distance, (this_loc, this_path) = directions_queue.pop()
+
+            if this_loc == target:
+                yield "".join(step.to_symbol() for step in this_path)
+            else:
+                for direction in this_loc.directions_to(target):
+                    next_loc = this_loc.next(direction)
+                    if next_loc == self.buttons["x"]:
+                        continue
+                    directions_queue.push(
+                        this_distance + 1,
+                        (this_loc.next(direction), this_path[:] + [direction])
+                )
 
     @staticmethod
     def get_direction_from_diff(
@@ -140,6 +162,34 @@ class Day21(Solver):
             score += complexity * code_int
 
         return str(score)
+
+    def find_best_direction_buttons(
+            self, pads: List[Keypad], first_buttons: str
+    ) -> str:
+        buttons: List[str] = [""] * len(pads)
+
+        # for button in first_buttons:
+        #     paths: List[List[str]] = []
+        #     for i, this_pad in enumerate(pads):
+        #         for this_path in this_pad.find_all_keypad_directions(button):
+
+        # target_button = first_buttons[0]
+        # new_paths = []
+        # for i, _ in enumerate(pads):
+        #     paths = list(
+        #         pads[i].find_all_keypad_directions(target_button)
+        #     )
+        #     all_paths.append(paths)
+
+        # target_button = first_buttons[0]
+        #
+        # all_paths = defaultdict(dict)
+        # collection = all_paths
+        # for i, this_pad in enumerate(pads):
+        #     for this_path in this_pad.find_all_keypad_directions(target_button):
+        #         collection[this_pad]
+
+        return buttons_dir
 
 
 if __name__ == "__main__":
