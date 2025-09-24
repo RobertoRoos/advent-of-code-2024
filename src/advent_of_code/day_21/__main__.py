@@ -1,14 +1,14 @@
-from collections import defaultdict
-from typing import Dict, List, Iterable, Tuple
 from enum import StrEnum
+from typing import Dict, List, Tuple
 
-from advent_of_code.shared import Direction, RowCol, Solver, main, PriorityList
+from advent_of_code.shared import Direction, RowCol, Solver, main
 
 Buttons = Dict[str, RowCol]
 
 
 class KeypadType(StrEnum):
     """The different types of keypads we have."""
+
     NUMERIC = "numeric"
     DIRECTIONAL = "directional"
 
@@ -39,45 +39,36 @@ class Keypad:
             "<": RowCol(1, 0),
             "v": RowCol(1, 1),
             ">": RowCol(1, 2),
-        }
+        },
     }
 
-    # Look-up table on how to navigate from any button to another button
+    # Look-up table on how to possibly navigate from any button to another button
     # (including the final 'A' to press that button):
-    PATH_DIRECTIONS: Dict[KeypadType, Dict[Tuple[str, str], str]] = {}
+    PATH_DIRECTIONS: Dict[KeypadType, Dict[Tuple[str, str], List[str]]] = {}
 
-    def __init__(self, pad_type: KeypadType, position: str = "A"):
+    def __init__(self, pad_type: KeypadType):
 
         if not self.PATH_DIRECTIONS:
             Keypad.build_lookup()
 
         self.pad_type = pad_type
-        self.loc: RowCol = RowCol(0, 0)
-        self.position: str = ""
-        self.move_to(position)
 
-    def move_to(self, position: str):
-        """Update internal location and button name."""
-        self.loc = self.BUTTONS[self.pad_type][position]
-        self.position = position
+    def get_button_paths(self, start: str, target: str) -> List[str]:
+        """Get possible paths to go from one button to another."""
+        return self.PATH_DIRECTIONS[self.pad_type][(start, target)]
 
-    def press_button_series(self, buttons: str) -> str:
-        """Instantly process a sequence of buttons."""
-        return "".join(
-            self.press_button(b) for b in buttons
-        )
+    def get_sequence_paths(self, code: str) -> List[List[str]]:
+        """List all the possible paths per character in the code.
 
-    def press_button(self, target: str) -> str:
-        """Find the directional keypad presses we'd need to press the target.
-
-        This includes the 'activate' press at the end.
-        A path is chosen to minimize switching buttons.
-
-        Also update internal position
+        Assume we start hovering over "A".
         """
-        path = self.PATH_DIRECTIONS[self.pad_type][(self.position, target)]
-        self.position = target
-        return path
+        sequences = []
+        prev = "A"
+        for char in code:
+            sequences.append(self.get_button_paths(prev, char))
+            prev = char
+
+        return sequences
 
     @classmethod
     def build_lookup(cls):
@@ -92,74 +83,69 @@ class Keypad:
                     if button_to == "x" or button_from == "x":
                         continue
 
-                    path = cls.find_keypad_directions(
+                    paths = cls.find_all_keypad_directions(
                         pad_type, buttons[button_from], buttons[button_to]
                     )
-                    path_str = "".join(
-                        direction.to_symbol() for direction in path
-                    ) + "A"
+                    path_strs = [
+                        "".join(direction.to_symbol() for direction in path) + "A"
+                        for path in paths
+                    ]
 
-                    cls.PATH_DIRECTIONS[pad_type][(button_from, button_to)] = path_str
-
-        # The preference for horizontal makes sure that the move from "A" to "<"
-        # happens like "<v<A" (instead of "v<<A"), which is preferred according
-        # to the sample.
-
-        # But this will mess up some numeric directions, we'll just hard-code
-        # correct them:
+                    cls.PATH_DIRECTIONS[pad_type][(button_from, button_to)] = path_strs
 
     @classmethod
-    def find_keypad_directions(
-            cls, pad_type: KeypadType, start: RowCol, target: RowCol
-        ) -> List[Direction]:
-        """Find the fewest steps needed to navigate to a button."""
-        # Always do horizontal first:
-        # while loc != target:
-        #     found_next = False
-        #     for next_direction in loc.directions_to(target, north_south_first=False):
-        #         next_loc = loc.next(next_direction)
-        #         if next_loc == cls.BUTTONS[pad_type]["x"]:
-        #             continue
-        #
-        #         loc = next_loc
-        #         found_next = True
-        #         yield next_direction
-        #
-        #     if not found_next:
-        #         raise RuntimeError("Failed to find next keypad path")
+    def find_all_keypad_directions(
+        cls, pad_type: KeypadType, start: RowCol, target: RowCol
+    ) -> List[List[Direction]]:
+        """Return a list of possible paths to a target across the keypad.
 
-        # Try horizontal first, but limit number of 'bends':
-        for north_south_first in [False, True]:
-            loc = start.copy()
-            directions = []
-            found = True
-            while loc != target:
-                next_direction = next(loc.directions_to(target, north_south_first))
-                next_loc = loc.next(next_direction)
-                if next_loc == cls.BUTTONS[pad_type]["x"]:
-                    found = False
-                    break  # Start again, but now prefer the other direction
-
-                loc = next_loc
-                directions.append(next_direction)
-
-            if found:
-                return directions
-
-        raise RuntimeError("Failed to find next keypad path")
-
-
-    @classmethod
-    def consecutive_keypads(cls, pads: List["Keypad"], sequence: str) -> Iterable[str]:
-        """Go through a stack of keypads in one go.
-
-        Relies on recursion.
+        The returned options are not weighted or sorted.
         """
-        next_sequence = pads[0].press_button_series(sequence)
-        yield next_sequence
+        path_queue = [(start, [])]
+        paths = []
+        while path_queue:
+            this_loc, this_path = path_queue.pop(0)
 
-        if len(pads) > 1:
-            yield from cls.consecutive_keypads(pads[1:], next_sequence)
+            if this_loc == target:
+                paths.append(this_path)
+
+            for direction in this_loc.directions_to(target):
+                next_loc = this_loc.next(direction)
+                if next_loc == cls.BUTTONS[pad_type]["x"]:
+                    continue  # Dead end
+
+                path_queue.append((next_loc, this_path[:] + [direction]))
+
+        return paths
+
+    @classmethod
+    def get_final_complexity_of_stack(cls, pads: List["Keypad"], code: str) -> int:
+        """Return the smallest directional sequence length of the stack of keypads.
+
+        It finds the length of the shortest paths for chained pads.
+        It works recursively and per individual button move.
+
+        An important realization is that you cannot maintain a single strategy for
+        button paths. Hence we rely on the various paths we built up once and keep
+        trying. The recursion depth is limited by going character by character: the
+        total number of complete sequences is huge for longer codes, but letter by
+        letter it's minimal and those sub-sequences can be optimized independently.
+        """
+        paths_per_character = pads[0].get_sequence_paths(code)
+        # Like: `[ <paths for char 1>, <paths for char 2>, ... ]``
+        # List of lists of options for paths
+
+        min_length = 0
+        for paths in paths_per_character:
+            if len(pads) == 1:  # End of recursion depth
+                min_length += min(map(len, paths))
+            else:  # Recurse deeper
+                min_length += min(
+                    cls.get_final_complexity_of_stack(pads[1:], path) for path in paths
+                )
+            # Sum the length of the shortest string in each list
+
+        return min_length
 
 
 class Day21(Solver):
@@ -169,51 +155,19 @@ class Day21(Solver):
 
         score = 0
 
+        pads = [
+            Keypad(KeypadType.NUMERIC),
+            Keypad(KeypadType.DIRECTIONAL),
+            Keypad(KeypadType.DIRECTIONAL),
+        ]  # The relevant keypads and their positions
+
         for code in codes:
 
-            pads = [
-                Keypad(KeypadType.NUMERIC),
-                Keypad(KeypadType.DIRECTIONAL),
-                Keypad(KeypadType.DIRECTIONAL),
-            ]  # The relevant keypads and their positions
-
-            sequences = list(
-                Keypad.consecutive_keypads(pads, code)
-            )
-
-            complexity = len(sequences[-1])
+            complexity = Keypad.get_final_complexity_of_stack(pads, code)
             code_int = int(code[:-1])
             score += complexity * code_int
 
         return str(score)
-
-    # def find_best_direction_buttons(
-    #         self, pads: List[Keypad], first_buttons: str
-    # ) -> str:
-    #     buttons: List[str] = [""] * len(pads)
-    #
-    #     # for button in first_buttons:
-    #     #     paths: List[List[str]] = []
-    #     #     for i, this_pad in enumerate(pads):
-    #     #         for this_path in this_pad.find_all_keypad_directions(button):
-    #
-    #     # target_button = first_buttons[0]
-    #     # new_paths = []
-    #     # for i, _ in enumerate(pads):
-    #     #     paths = list(
-    #     #         pads[i].find_all_keypad_directions(target_button)
-    #     #     )
-    #     #     all_paths.append(paths)
-    #
-    #     # target_button = first_buttons[0]
-    #     #
-    #     # all_paths = defaultdict(dict)
-    #     # collection = all_paths
-    #     # for i, this_pad in enumerate(pads):
-    #     #     for this_path in this_pad.find_all_keypad_directions(target_button):
-    #     #         collection[this_pad]
-    #
-    #     return buttons_dir
 
 
 if __name__ == "__main__":

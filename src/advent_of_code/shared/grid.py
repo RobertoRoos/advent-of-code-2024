@@ -121,7 +121,9 @@ class RowCol:
         """Get number of horizontal/vertical steps between two points."""
         return abs(self.row - other.row) + abs(self.col - other.col)
 
-    def directions_to(self, other: Self, north_south_first: bool = True) -> Iterable[Direction]:
+    def directions_to(
+        self, other: Self, north_south_first: bool = True
+    ) -> Iterable[Direction]:
         """Get the directions (one or two) towards another point.
 
         When `north_south_first` is True, either North or South will always be the first
