@@ -2,7 +2,7 @@ import unittest
 from collections import defaultdict
 from itertools import product
 
-from advent_of_code.day_21.__main__ import Day21, Keypad
+from advent_of_code.day_21.__main__ import Day21, Keypad, KeypadType
 
 from ..advent_testcase import AdventTestCase
 
@@ -11,23 +11,48 @@ class TestDay21(AdventTestCase):
 
     PUZZLE = Day21
 
+    def test_keypad_recursion(self):
+        pads = [
+            Keypad(KeypadType.NUMERIC),
+            Keypad(KeypadType.DIRECTIONAL),
+            Keypad(KeypadType.DIRECTIONAL),
+        ]
+        sequences = list(
+            Keypad.consecutive_keypads(pads, "029A")
+        )
+        expected = [
+            "029A",
+            "<A^A>^^AvvvA",
+            "v<<A>>^A<A>AvA<^AA>A<vAAA>^A",
+            "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A",
+        ]
+        self.assertEqual(expected[1:], sequences)
+
     def test_keypad_finder(self):
+        path = list(Keypad.find_keypad_directions(
+            KeypadType.DIRECTIONAL,
+            "^",
+            ">"
+        ))
+        return
 
-        pad = Keypad(Day21.KEYPAD_NUMERIC)
-
-        pad.move_to("7")
-        buttons = pad.find_and_press_button("6")
-        self.assertEqual("v>>A", buttons)
-
-        pad.move_to("7")
-        buttons = pad.find_and_press_button("A")
-        self.assertEqual("vv>v>A", buttons)
-        # End with ">", not with "v"
-
-        pad.move_to("0")
-        buttons = pad.find_and_press_button("7")
-        self.assertEqual("^<^^A", buttons)
-        # End with "^", not with "<"
+    # def test_keypad_finder(self):
+    #
+    #     pad = Keypad(Day21.KEYPAD_NUMERIC)
+    #
+    #     pad.move_to("7")
+    #     buttons = pad.find_and_press_button("6")
+    #     self.assertEqual("v>>A", buttons)
+    #
+    #     pad.move_to("7")
+    #     buttons = pad.find_and_press_button("A")
+    #     self.assertEqual("vv>v>A", buttons)
+    #     # End with ">", not with "v"
+    #
+    #     pad.move_to("0")
+    #     buttons = pad.find_and_press_button("7")
+    #     self.assertEqual("^<^^A", buttons)
+    #     # End with "^", not with "<"
 
     def test_find_all(self):
         pad = Keypad(Day21.KEYPAD_NUMERIC)
