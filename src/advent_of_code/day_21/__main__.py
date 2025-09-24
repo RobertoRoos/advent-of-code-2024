@@ -111,27 +111,43 @@ class Keypad:
     @classmethod
     def find_keypad_directions(
             cls, pad_type: KeypadType, start: RowCol, target: RowCol
-        ) -> Iterable[Direction]:
-        """Find the steps needed to navigate to a button.
+        ) -> List[Direction]:
+        """Find the fewest steps needed to navigate to a button."""
+        # Always do horizontal first:
+        # while loc != target:
+        #     found_next = False
+        #     for next_direction in loc.directions_to(target, north_south_first=False):
+        #         next_loc = loc.next(next_direction)
+        #         if next_loc == cls.BUTTONS[pad_type]["x"]:
+        #             continue
+        #
+        #         loc = next_loc
+        #         found_next = True
+        #         yield next_direction
+        #
+        #     if not found_next:
+        #         raise RuntimeError("Failed to find next keypad path")
 
-        Moving horizontally first is always preferred! This notion is mainly copied
-        from the example, I am personally no sure why this is important.
-        """
-        loc = start.copy()
-
-        while loc != target:
-            found_next = False
-            for next_direction in loc.directions_to(target, north_south_first=False):
+        # Try horizontal first, but limit number of 'bends':
+        for north_south_first in [False, True]:
+            loc = start.copy()
+            directions = []
+            found = True
+            while loc != target:
+                next_direction = next(loc.directions_to(target, north_south_first))
                 next_loc = loc.next(next_direction)
                 if next_loc == cls.BUTTONS[pad_type]["x"]:
-                    continue
+                    found = False
+                    break  # Start again, but now prefer the other direction
 
                 loc = next_loc
-                found_next = True
-                yield next_direction
+                directions.append(next_direction)
 
-            if not found_next:
-                raise RuntimeError("Failed to find next keypad path")
+            if found:
+                return directions
+
+        raise RuntimeError("Failed to find next keypad path")
+
 
     @classmethod
     def consecutive_keypads(cls, pads: List["Keypad"], sequence: str) -> Iterable[str]:
@@ -149,36 +165,28 @@ class Keypad:
 class Day21(Solver):
 
     def __call__(self) -> str:
-        return ""
-    #     codes: List[str] = [txt.strip() for txt in self.iterate_input()]
-    #
-    #     keypads = [
-    #         Keypad(self.KEYPAD_NUMERIC),
-    #         Keypad(self.KEYPAD_DIRECTIONAL),
-    #         Keypad(self.KEYPAD_DIRECTIONAL),
-    #     ]
-    #     # The relevant keypads and their positions
-    #
-    #     score = 0
-    #
-    #     for code in codes:
-    #         button_presses = [code]
-    #         for keypad in keypads:
-    #             next_keypad_buttons = ""
-    #             for c in button_presses[-1]:
-    #                 next_keypad_buttons += keypad.find_and_press_button(c)
-    #
-    #             if keypad.position != "A":
-    #                 raise RuntimeError("Keypad hasn't returned to A position!")
-    #
-    #             button_presses.append(next_keypad_buttons)
-    #
-    #         complexity = len(button_presses[-1])
-    #         code_int = int(code[:-1])
-    #         score += complexity * code_int
-    #
-    #     return str(score)
-    #
+        codes: List[str] = [txt.strip() for txt in self.iterate_input()]
+
+        score = 0
+
+        for code in codes:
+
+            pads = [
+                Keypad(KeypadType.NUMERIC),
+                Keypad(KeypadType.DIRECTIONAL),
+                Keypad(KeypadType.DIRECTIONAL),
+            ]  # The relevant keypads and their positions
+
+            sequences = list(
+                Keypad.consecutive_keypads(pads, code)
+            )
+
+            complexity = len(sequences[-1])
+            code_int = int(code[:-1])
+            score += complexity * code_int
+
+        return str(score)
+
     # def find_best_direction_buttons(
     #         self, pads: List[Keypad], first_buttons: str
     # ) -> str:
