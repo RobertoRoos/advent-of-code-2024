@@ -79,3 +79,28 @@ class Direction(StrEnum):
             return turns
 
         return -1 if turns == 3 else turns
+
+    @staticmethod
+    def from_symbol(symbol: str) -> "Direction":
+        """Get a direction from arrow symbols."""
+        if symbol == "^":
+            return Direction.NORTH
+        elif symbol == "v":
+            return Direction.SOUTH
+        elif symbol == ">":
+            return Direction.EAST
+        elif symbol == "<":
+            return Direction.WEST
+        else:
+            raise ValueError(f"Cannot get direction from {symbol}")
+
+    def to_symbol(self) -> str:
+        """Get symbol from this direction."""
+        if self.value == Direction.NORTH:
+            return "^"
+        elif self.value == Direction.SOUTH:
+            return "v"
+        elif self.value == Direction.EAST:
+            return ">"
+        else:
+            return "<"
