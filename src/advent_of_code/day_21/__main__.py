@@ -46,6 +46,8 @@ class Keypad:
     # (including the final 'A' to press that button):
     PATH_DIRECTIONS: Dict[KeypadType, Dict[Tuple[str, str], List[str]]] = {}
 
+    MIN_COMPLEXITY_CACHE: Dict[Tuple[int, str], int] = {}
+
     def __init__(self, pad_type: KeypadType):
 
         if not self.PATH_DIRECTIONS:
@@ -130,20 +132,33 @@ class Keypad:
         trying. The recursion depth is limited by going character by character: the
         total number of complete sequences is huge for longer codes, but letter by
         letter it's minimal and those sub-sequences can be optimized independently.
+
+        At a depth of 25 this bogs down - but there is loads of repetition. Each code
+        (at a specified depth) will always have same min. complexity, so cache it to
+        minimize recursion steps.
         """
+        depth = len(pads) - 1
+        cache_key = (depth, code)
+        try:
+            return cls.MIN_COMPLEXITY_CACHE[cache_key]
+        except KeyError:
+            pass
+
         paths_per_character = pads[0].get_sequence_paths(code)
         # Like: `[ <paths for char 1>, <paths for char 2>, ... ]``
         # List of lists of options for paths
 
         min_length = 0
         for paths in paths_per_character:
-            if len(pads) == 1:  # End of recursion depth
+            if depth == 0:  # End of recursion depth
                 min_length += min(map(len, paths))
             else:  # Recurse deeper
                 min_length += min(
                     cls.get_final_complexity_of_stack(pads[1:], path) for path in paths
                 )
             # Sum the length of the shortest string in each list
+
+        cls.MIN_COMPLEXITY_CACHE[cache_key] = min_length
 
         return min_length
 
@@ -157,12 +172,13 @@ class Day21(Solver):
 
         pads = [
             Keypad(KeypadType.NUMERIC),
-            Keypad(KeypadType.DIRECTIONAL),
-            Keypad(KeypadType.DIRECTIONAL),
-        ]  # The relevant keypads and their positions
+        ]  # The relevant keypads (no position need to be tracked)
+
+        depth = 2 if self.args.part == 1 else 25
+
+        pads += [Keypad(KeypadType.DIRECTIONAL) for _ in range(depth)]
 
         for code in codes:
-
             complexity = Keypad.get_final_complexity_of_stack(pads, code)
             code_int = int(code[:-1])
             score += complexity * code_int

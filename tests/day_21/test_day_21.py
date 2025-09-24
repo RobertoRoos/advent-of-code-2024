@@ -57,10 +57,12 @@ class TestDay21(AdventTestCase):
             min_len = Keypad.get_final_complexity_of_stack(pads, code)
             self.assertEqual(expected, min_len)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("xxx", result)
+    def test_sample_part_2(self):
+        solver = self.get_solver(2)
+        result = solver()
+        self.assertNotEqual("126384", result)
+
+    # No outcome is given for part 2
 
 
 if __name__ == "__main__":
