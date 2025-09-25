@@ -1,3 +1,6 @@
+from collections import defaultdict
+from typing import Dict, Iterable, Set, Tuple
+
 from advent_of_code.shared import Solver, main
 
 
@@ -10,6 +13,7 @@ class MarketSecrets:
 
     @staticmethod
     def prune(secret: int) -> int:
+        # Note: 16777216 = 2^24
         return secret % 16777216
 
     @classmethod
@@ -30,25 +34,65 @@ class MarketSecrets:
         return new_secret
 
     @classmethod
-    def next_n_secrets(cls, secret: int, n: int) -> int:
+    def get_n_secrets(cls, secret: int, n: int) -> Iterable[int]:
+        """Get a list of `N` following secrets."""
+        yield secret
         for _ in range(n):
             secret = cls.next_secret(secret)
+            yield secret
 
-        return secret
+    @staticmethod
+    def get_price(secret: int) -> int:
+        return secret % 10
 
 
 class Day22(Solver):
 
     def __call__(self) -> str:
-        secrets = [int(txt) for txt in self.iterate_input()]
+        starting_secrets = [int(txt) for txt in self.iterate_input()]
 
-        new_secrets = [
-            MarketSecrets.next_n_secrets(secret, 2_000) for secret in secrets
-        ]
+        if self.args.part == 1:
+            result = 0
 
-        result = sum(new_secrets)
+            for starting_secret in starting_secrets:
+                _final_secret = 0
+                for _final_secret in MarketSecrets.get_n_secrets(
+                    starting_secret, 2_000
+                ):
+                    pass
+                result += _final_secret
 
-        return str(result)
+            return str(result)
+
+        else:
+            sum_prices_by_changes_sum: Dict[Tuple, int] = defaultdict(int)
+            # Prices by price changes, summed together, like:
+            # { (<w>, <x>, <y>, <z>): <sum of prices>, ... }
+
+            for _buyer, starting_secret in enumerate(starting_secrets):
+                changes: Tuple = tuple([0] * 4)
+                changes_seen: Set[Tuple] = set()
+                prev_price = None
+                for i, secret in enumerate(
+                    MarketSecrets.get_n_secrets(starting_secret, 2_000)
+                ):
+                    price = MarketSecrets.get_price(secret)
+                    if prev_price is not None:
+                        changes = tuple(
+                            [changes[1], changes[2], changes[3], price - prev_price]
+                        )
+
+                    if i > 3:
+                        if changes not in changes_seen:
+                            sum_prices_by_changes_sum[changes] += price
+                            changes_seen.add(changes)
+
+                    prev_price = price
+
+            changes = max(sum_prices_by_changes_sum, key=sum_prices_by_changes_sum.get)
+            result = sum_prices_by_changes_sum[changes]
+
+            return str(result)
 
 
 if __name__ == "__main__":
