@@ -20,16 +20,23 @@ class MarketSecrets:
     def next_secret(cls, secret: int) -> int:
         """Compute the next secret number."""
         # Step 1:
-        new_secret = cls.mix(secret, secret * 64)
-        new_secret = cls.prune(new_secret)
+        # new_secret = cls.mix(secret, secret * 64)
+        # new_secret = cls.prune(new_secret)
+        new_secret = (secret ^ (secret << 6)) & 16777215
+
+        # Condensing these steps is slightly faster
+        # Now that multiplying by 2^n is the same as a bit-shift and a modulo of
+        # 2^n is the same as a bitmask
 
         # Step 2:
-        new_secret = cls.mix(new_secret, int(new_secret / 32))
-        new_secret = cls.prune(new_secret)
+        # new_secret = cls.mix(new_secret, int(new_secret / 32))
+        # new_secret = cls.prune(new_secret)
+        new_secret = (new_secret ^ (new_secret >> 5)) & 16777215
 
         # Step 3:
-        new_secret = cls.mix(new_secret, new_secret * 2048)
-        new_secret = cls.prune(new_secret)
+        # new_secret = cls.mix(new_secret, new_secret * 2048)
+        # new_secret = cls.prune(new_secret)
+        new_secret = (new_secret ^ (new_secret << 11)) & 16777215
 
         return new_secret
 
