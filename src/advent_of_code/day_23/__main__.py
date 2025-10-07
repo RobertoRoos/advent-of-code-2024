@@ -1,4 +1,5 @@
-from typing import FrozenSet, Set
+from collections import defaultdict
+from typing import DefaultDict, FrozenSet, Set
 
 from advent_of_code.shared import (
     EdgeBidirectional,
@@ -86,6 +87,13 @@ class Day23(Solver):
         in the future.
         """
 
+        # Build a quick look-up of which nodes connects to which:
+        all_connected_nodes: DefaultDict[Node, Set[Node]] = defaultdict(set)
+        for node in self.graph.nodes:
+            all_connected_nodes[node] = {
+                n for _, n in self.graph.get_connected_nodes(node)
+            }
+
         # Defined clusters:
         clusters_queue: Set[FrozenSet[Node]] = set()
         # We keep the queue as a set itself, instead of a list, to prevent handling
@@ -104,9 +112,7 @@ class Day23(Solver):
             # nodes in the current cluster
             new_nodes: None | Set[Node] = None
             for node in cluster:
-                connected_nodes: Set[Node] = {
-                    n for _, n in self.graph.get_connected_nodes(node)
-                }
+                connected_nodes = all_connected_nodes[node]
 
                 if new_nodes is None:
                     new_nodes = connected_nodes
@@ -122,7 +128,7 @@ class Day23(Solver):
                     biggest_cluster = cluster
             else:
                 for new_node in new_nodes:
-                    new_cluster = cluster | {new_node}
+                    new_cluster = frozenset(cluster | {new_node})
                     clusters_queue.add(new_cluster)
 
         return biggest_cluster

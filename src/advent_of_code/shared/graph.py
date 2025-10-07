@@ -74,6 +74,7 @@ class Graph:
         self.nodes: Set[Node] = set()
 
         self.edges_by_node: Dict[Node, Set[EdgeBase]] = defaultdict(set)
+        # self.connected_nodes: Dict[Node, Set[Node]] = defaultdict(set)
 
     def add_edge(self, edge: EdgeBase):
         # Update sets:
