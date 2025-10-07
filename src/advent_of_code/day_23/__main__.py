@@ -1,4 +1,4 @@
-from typing import List, Set
+from typing import List, Set, Tuple
 
 from advent_of_code.shared import (
     EdgeBidirectional,
@@ -73,79 +73,43 @@ class Day23(Solver):
 
         return groups
 
-    # def find_clusters(self) -> List[Set[EdgeBidirectional]]:
-    #     """Find all the groups of commonly connected nodes in the graph"""
-    #
-    #     clusters = []
-    #
-    #     # Go over all nodes and see how big their network is:
-    #     for main_node in self.graph.nodes:
-    #
-    #
-    #     return clusters
-
-    # def grow_cluster(self,  starting_node: Node) -> Set[EdgeBidirectional]:
-    #     """Recursively add to a cluster."""
-    #
-    #     cluster_nodes = set()
-    #     cluster_edges = set()
-    #
-    #     # Keep a list of the latest nodes that we add, so we can grow from only those:
-    #     outer_nodes = [starting_node]
-    #     while outer_nodes:
-    #         new_node = outer_nodes.pop(0)
-    #         cluster_nodes.add(new_node)
-    #
-    #         # All potential edges also part of this cluster:
-    #         for edge in self.graph.edges_by_node(new_node):
-    #             connected_with_all = all(
-    #                 cluster_node in edge.nodes
-    #                 for cluster_node in cluster
-    #             )  # `True` if
-
     def find_largest_cluster(self):
 
         # Defined clusters, prioritized by their size:
-        clusters_queue = PriorityList[Set[Node]]()
+        clusters_queue = set()
 
         # Add the entire graph as we have it:
         for node in self.graph.nodes:
-            clusters_queue.push(1, {node})
+            clusters_queue.add(frozenset([node]))
 
         biggest_cluster: Set[Node] = set()
 
         while clusters_queue:
-            _, cluster = clusters_queue.pop()
-            # For each node in the cluster, check if there are new fully connected
-            # nodes:
-            # for cluster_node in cluster:
-            #     for potential_edge in self.graph.edges_by_node[cluster_node]:
-            #         potential_node = potential_edge.get_other_node(
-            #             cluster_node, check_first=False
-            #         )
-            #
-            #         for checking_node in cluster:
-            #             if checking_node == cluster_node:
-            #                 continue
+            cluster = clusters_queue.pop()
 
-            new_nodes: None | Set[Node] = None
-            for cluster_node in cluster:
-                connected_nodes = {
-                    n for _, n in self.graph.get_connected_nodes(cluster_node)
-                }
-                if new_nodes is None:
-                    new_nodes = connected_nodes
-                else:
-                    new_nodes = new_nodes.intersection(connected_nodes)
+            new_nodes = None
+
+            for node in cluster:
+                connected_nodes = {n for _, n in self.graph.get_connected_nodes(node)}
+
+                new_nodes = (
+                    connected_nodes
+                    if new_nodes is None
+                    else set.intersection(new_nodes, connected_nodes)
+                )
+
+                if not new_nodes:
+                    break
 
             if not new_nodes:
                 # No new connected nodes, this cluster is finished
+                print(len(clusters_queue))
                 if len(cluster) > len(biggest_cluster):
                     biggest_cluster = cluster
             else:
                 for new_node in new_nodes:
                     new_cluster = cluster | {new_node}
-                    clusters_queue.push(len(new_cluster), new_cluster)
+                    clusters_queue.add(new_cluster)
 
         return biggest_cluster
 
