@@ -1,10 +1,9 @@
-from typing import List, Set, Tuple
+from typing import FrozenSet, Set
 
 from advent_of_code.shared import (
     EdgeBidirectional,
     Graph,
     Node,
-    PriorityList,
     Solver,
     main,
 )
@@ -74,36 +73,51 @@ class Day23(Solver):
         return groups
 
     def find_largest_cluster(self):
+        """Find the largest cluster in the graph.
 
-        # Defined clusters, prioritized by their size:
-        clusters_queue = set()
+        We call a cluster a group of nodes that are all interconnected.
 
-        # Add the entire graph as we have it:
-        for node in self.graph.nodes:
-            clusters_queue.add(frozenset([node]))
+        We do this by keeping a queue of clusters-in-progress. For every item here
+        we look for new nodes that are connected to all cluster members and add it
+        to a new cluster, which is appended to the queue. While we work we can track
+        the largest clusters we've encountered.
+        This leads to many parallel clusters, but I think this is necessary as
+        purposefully leaving out a potential extra node can always lead to more nodes
+        in the future.
+        """
 
-        biggest_cluster: Set[Node] = set()
+        # Defined clusters:
+        clusters_queue: Set[FrozenSet[Node]] = set()
+        # We keep the queue as a set itself, instead of a list, to prevent handling
+        # duplicate clusters in the work queue.
+
+        # Add the entire graph as we have it, each edge as a cluster:
+        for edge in self.graph.edges:
+            clusters_queue.add(frozenset(edge.nodes))
+
+        biggest_cluster: FrozenSet[Node] = frozenset()
 
         while clusters_queue:
             cluster = clusters_queue.pop()
 
-            new_nodes = None
-
+            # Keep a continually adjusting set of nodes that are connected to all
+            # nodes in the current cluster
+            new_nodes: None | Set[Node] = None
             for node in cluster:
-                connected_nodes = {n for _, n in self.graph.get_connected_nodes(node)}
+                connected_nodes: Set[Node] = {
+                    n for _, n in self.graph.get_connected_nodes(node)
+                }
 
-                new_nodes = (
-                    connected_nodes
-                    if new_nodes is None
-                    else set.intersection(new_nodes, connected_nodes)
-                )
+                if new_nodes is None:
+                    new_nodes = connected_nodes
+                else:
+                    new_nodes.intersection_update(connected_nodes)
 
                 if not new_nodes:
                     break
 
             if not new_nodes:
                 # No new connected nodes, this cluster is finished
-                print(len(clusters_queue))
                 if len(cluster) > len(biggest_cluster):
                     biggest_cluster = cluster
             else:

@@ -1,7 +1,7 @@
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Set, Tuple, Type
+from typing import Dict, Iterable, Set, Tuple, Type
 
 
 @dataclass
