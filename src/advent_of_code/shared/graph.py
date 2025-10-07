@@ -30,6 +30,19 @@ class EdgeBase(ABC):
         txt = ",".join(node.name for node in self.nodes)
         return f"Edge({txt}, cost={self.cost})"
 
+    def get_other_node(self, other_node: Node, check_first: bool = True) -> Node:
+        """Given one node, return the other one of this edge."""
+
+        if check_first:
+            if other_node not in self.nodes:
+                raise ValueError(f"Node {other_node} isn't in this edge to begin with")
+
+        for node in self.nodes:
+            if node != other_node:
+                return node
+
+        raise ValueError(f"Failed to get other node of {other_node}")
+
 
 class Edge(EdgeBase):
     """A one-directional edge from a graph.
@@ -60,7 +73,7 @@ class Graph:
         self.edges: Set[EdgeBase] = set()
         self.nodes: Set[Node] = set()
 
-        self.edges_by_node: Dict[Node, List[EdgeBase]] = defaultdict(list)
+        self.edges_by_node: Dict[Node, Set[EdgeBase]] = defaultdict(set)
 
     def add_edge(self, edge: EdgeBase):
         # Update sets:
@@ -73,7 +86,7 @@ class Graph:
         # Also update helper look-ups:
         self.nodes |= edge.nodes
         for node in edge.nodes:
-            self.edges_by_node[node].append(edge)
+            self.edges_by_node[node].add(edge)
 
     def add_and_create_edge(
         self, edge_type: Type, node_1: Node, node_2: Node, cost=None
@@ -85,3 +98,22 @@ class Graph:
         self.add_and_create_edge(
             edge_type=edge_type, node_1=Node(node_1), node_2=Node(node_2), cost=cost
         )
+
+    def get_connected_nodes(self, node: Node) -> Set[Tuple[EdgeBase, Node]]:
+        """Return a set of other nodes (and their edge) the given nodes connects to."""
+        return {
+            (edge, edge.get_other_node(node, check_first=False))
+            for edge in self.edges_by_node[node]
+        }
+
+    def get_edge(self, node_1: Node, node_2: Node) -> EdgeBase | None:
+        """Get the edge between two nodes, or ``None``."""
+
+        overlapping_edges = self.edges_by_node[node_1].intersection(
+            self.edges_by_node[node_2]
+        )
+
+        if not overlapping_edges:
+            return None
+        else:
+            return next(iter(overlapping_edges))
