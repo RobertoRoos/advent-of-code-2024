@@ -5,20 +5,13 @@ from advent_of_code.shared import Solver, main
 
 
 class Wire:
-    """Abstraction of wire.
-
-    Also keep a list of all created wires.
-    """
-
-    LIST: Dict[str, "Wire"] = {}
+    """Abstraction of wire."""
 
     def __init__(self, name: str, value: None | bool = None):
         self.name = name
         self.value = value
         self.input_for_gates: List["Gate"] = []
         self.output_of_gates: List["Gate"] = []
-
-        self.LIST[self.name] = self
 
 
 class Gate:
@@ -32,14 +25,10 @@ class Gate:
         OR = "OR"
         XOR = "XOR"
 
-    def __init__(self, inputs: List[str], logic: Logic, output: str):
-        for wire in inputs + [output]:
-            if wire not in Wire.LIST:
-                Wire.LIST[wire] = Wire(name=wire, value=None)
-
-        self.inputs: Tuple[Wire, Wire] = (Wire.LIST[inputs[0]], Wire.LIST[inputs[1]])
+    def __init__(self, inputs: List[Wire], logic: Logic, output: Wire):
+        self.inputs: Tuple[Wire, Wire] = (inputs[0], inputs[1])
         self.logic = logic
-        self.output: Wire = Wire.LIST[output]
+        self.output: Wire = output
 
         for wire in self.inputs:
             wire.input_for_gates.append(self)
@@ -71,6 +60,7 @@ class Day24(Solver):
 
     def __call__(self) -> str:
 
+        wires: Dict[str, Wire] = {}
         gates_by_output: Dict[str, Gate] = {}
 
         # Track gates that don't have an output yet:
@@ -85,14 +75,20 @@ class Day24(Solver):
 
             if first_section:
                 name, _, value = line.partition(": ")
-                Wire(name, value == "1")  # Self-registered
+                wires[name] = Wire(name, value == "1")  # Self-registered
             else:
                 parts = line.split(" ")
                 input_names = [parts[0], parts[2]]
                 logic_type = Gate.Logic(parts[1])
                 output_name = parts[4]
 
-                new_gate = Gate(input_names, logic_type, output_name)
+                for name in input_names + [output_name]:
+                    if name not in wires:
+                        wires[name] = Wire(name, None)
+
+                new_gate = Gate(
+                    [wires[n] for n in input_names], logic_type, wires[output_name]
+                )
                 gates_by_output[output_name] = new_gate
 
                 if new_gate.has_inputs():
@@ -110,7 +106,7 @@ class Day24(Solver):
 
         # Combine into output:
         result = 0
-        for wire in Wire.LIST.values():
+        for wire in wires.values():
             if wire.name[0] == "z":
                 pos = int(wire.name[1:])
                 if wire.value:
