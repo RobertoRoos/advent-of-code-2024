@@ -40,10 +40,10 @@ class Solver:
         return parser
 
     def iterate_input(self) -> Iterator[str]:
-        """Yield each line of the input file."""
+        """Yield each line of the input file (stripped)."""
         with open(self.input_file, "r") as fh:
             while line := fh.readline():
-                yield line
+                yield line.strip()
 
     def get_input(self) -> List[str]:
         return self.input_file.read_text().split("\n")

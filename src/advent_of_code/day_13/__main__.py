@@ -64,7 +64,6 @@ class Day13(Solver):
 
         new_game = None
         for line in self.iterate_input():
-            line = line.strip()
             if not line:
                 new_game = None
                 continue

@@ -20,8 +20,6 @@ class Day19(Solver):
 
         first_line = True
         for line in self.iterate_input():
-            line = line.strip()
-
             if not line:
                 first_line = False
                 continue

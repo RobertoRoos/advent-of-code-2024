@@ -18,9 +18,6 @@ class Day15(Solver):
         instructions: List[Direction] = []
 
         for line in self.iterate_input():
-
-            line = line.strip()
-
             if line == "":
                 doing_map = False
                 continue

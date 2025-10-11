@@ -132,7 +132,6 @@ class Day17(Solver):
         registers: List[int] = []
         program: List[int] = []
         for line in self.iterate_input():
-            line = line.strip()
             if not line:
                 reading_registers = False
                 continue

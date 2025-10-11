@@ -43,7 +43,6 @@ class Day05(Solver):
         updates: List[List[Page]] = []
 
         for line in self.iterate_input():
-            line = line.strip()
             if line == "":
                 do_updates = True
                 continue

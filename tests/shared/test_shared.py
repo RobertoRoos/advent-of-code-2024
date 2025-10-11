@@ -38,7 +38,7 @@ class TestDay00(AdventTestCase):
     def test_input(self):
         obj = self.get_solver()
         txt = "\n".join(list(obj.iterate_input()))
-        self.assertEqual("test\n", txt)
+        self.assertEqual("test", txt)
 
 
 class TestGrid(unittest.TestCase):

@@ -199,7 +199,6 @@ class Grid:
         row = self.rows
         self.rows += 1
 
-        line = line.strip()
         if self.cols is None or self.cols == 0:
             self.cols = len(line)
         elif self.cols != len(line):
