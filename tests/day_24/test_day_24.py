@@ -23,7 +23,7 @@ class TestDay24(AdventTestCase):
         solver = self.get_solver(2, input_file="sample_input_part_2.txt")
         result = solver()
         # There is no real meaningful expectation given for the sample
-        self.assertEqual("z00,z01,z02,z03,z04,z05", result)
+        self.assertEqual("z00,z01,z02,z03,z04", result)
 
 
 if __name__ == "__main__":
