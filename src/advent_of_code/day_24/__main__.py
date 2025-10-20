@@ -1,5 +1,7 @@
+from collections import defaultdict
+from dataclasses import dataclass
 from enum import StrEnum
-from typing import Dict, List, Tuple, Set, Any, FrozenSet
+from typing import Any, DefaultDict, Dict, FrozenSet, List, NamedTuple, Self, Set, Tuple
 
 from advent_of_code.shared import Solver, main
 
@@ -23,16 +25,28 @@ class Wire:
         return f"Wire({self.name})"
 
 
+class Logic(StrEnum):
+    """Different logic gate types."""
+
+    AND = "AND"
+    OR = "OR"
+    XOR = "XOR"
+
+    def pick(self, wire_1: Wire, wire_2: Wire) -> "Gate":
+        """Return a child gate between two wires of a given type."""
+        pair = {wire_1, wire_2}
+        for gate in wire_1.input_for_gates + wire_2.input_for_gates:
+            if set(gate.inputs) == pair and gate.logic == self.value:
+                return gate
+
+        raise RuntimeError(f"Found no matching child gate")
+
+
 class Gate:
     """Logical gate abstraction.
 
     WHen a gate is instantiated it is also registered with the wire.
     """
-
-    class Logic(StrEnum):
-        AND = "AND"
-        OR = "OR"
-        XOR = "XOR"
 
     def __init__(self, inputs: List[Wire], logic: Logic, output: Wire):
         self.inputs: Tuple[Wire, Wire] = (inputs[0], inputs[1])
@@ -52,11 +66,11 @@ class Gate:
         Yield child gates that can now be run.
         """
         outcome = None
-        if self.logic == self.Logic.AND:
+        if self.logic == Logic.AND:
             outcome = self.inputs[0].value and self.inputs[1].value
-        elif self.logic == self.Logic.OR:
+        elif self.logic == Logic.OR:
             outcome = self.inputs[0].value or self.inputs[1].value
-        elif self.logic == self.Logic.XOR:
+        elif self.logic == Logic.XOR:
             outcome = self.inputs[0].value != self.inputs[1].value
 
         self.output.value = outcome
@@ -64,6 +78,10 @@ class Gate:
     def has_inputs(self):
         """``True`` if both inputs have a not-None value."""
         return self.inputs[0].value is not None and self.inputs[1].value is not None
+
+    @property
+    def inputs_set(self) -> Set[Self]:
+        return set(self.inputs)
 
     @classmethod
     def process_all(cls, gates: List["Gate"]):
@@ -104,7 +122,10 @@ class Gate:
 
         return (
             gate,
-            frozenset(cls._build_rules_by_output_recursively(sub_wire) for sub_wire in gate.inputs)
+            frozenset(
+                cls._build_rules_by_output_recursively(sub_wire)
+                for sub_wire in gate.inputs
+            ),
         )
 
     # @classmethod
@@ -118,12 +139,30 @@ class Gate:
     #     return children
 
 
+@dataclass
+class Adder:
+    x: Wire | None = None
+    y: Wire | None = None
+    z: Wire | None = None
+    c: Wire | None = None  # Output carry-over bit, c_out
+    u: Wire | None = None  # "x XOR y"
+    v: Wire | None = None  # "x AND y"
+    w: Wire | None = None  # "c_in AND u"
+
+
 class Day24(Solver):
 
-    def __call__(self) -> str:
+    def __init__(self, *args, **kwargs):
 
-        wires: Dict[str, Wire] = {}
-        gates: List[Gate] = []
+        super().__init__(*args, **kwargs)
+
+        self.wires: Dict[str, Wire] = {}
+        self.gates: List[Gate] = []
+        self.gates_by_wires: DefaultDict[FrozenSet[Wire], Dict[Logic, Gate]] = (
+            defaultdict(dict)
+        )
+
+    def __call__(self) -> str:
 
         # Process input file:
         first_section = True
@@ -134,29 +173,34 @@ class Day24(Solver):
 
             if first_section:
                 name, _, value = line.partition(": ")
-                wires[name] = Wire(name, value == "1")  # Self-registered
+                self.wires[name] = Wire(name, value == "1")  # Self-registered
             else:
                 parts = line.split(" ")
                 input_names = [parts[0], parts[2]]
-                logic_type = Gate.Logic(parts[1])
+                logic_type = Logic(parts[1])
                 output_name = parts[4]
 
                 for name in input_names + [output_name]:
-                    if name not in wires:
-                        wires[name] = Wire(name, None)
+                    if name not in self.wires:
+                        self.wires[name] = Wire(name, None)
 
                 new_gate = Gate(
-                    [wires[n] for n in input_names], logic_type, wires[output_name]
+                    [self.wires[n] for n in input_names],
+                    logic_type,
+                    self.wires[output_name],
                 )
-                gates.append(new_gate)
+                self.gates.append(new_gate)
+                self.gates_by_wires[frozenset(new_gate.inputs)][
+                    new_gate.logic
+                ] = new_gate
 
         if self.args.part == 1:
 
-            Gate.process_all(gates)
+            Gate.process_all(self.gates)
 
             # Combine into output:
             result = 0
-            for wire in wires.values():
+            for wire in self.wires.values():
                 if wire.name[0] == "z":
                     if wire.value:
                         result += 2 ** wire.number()
@@ -167,30 +211,39 @@ class Day24(Solver):
             # We cannot possibly find the swapped wires through trial-and-error.
             # Instead, we will trace the set of rules all the way down. We already know
             # what the rules must look like for summing binary, namely:
-            #   bit 0:          z[0] =   x[0] XOR y[0]
-            #   bit n, n>0:     z[n] = ( x[n] XOR y[n] ) XOR ( x[n-1] AND y[n-1] )
-            #
-            # So when we have the set of rules, we should be able to pick the incorrect
-            # ones directly.
 
-            output_wires = [w for w in wires.values() if w.name.startswith("z")]
+            # List of adder units, as they should be (correct values)
+            adders = [Adder() for w in self.wires.keys() if w.startswith("z")]
 
-            full_rules = Gate.build_rules_by_output(output_wires)
+            for wire in self.wires.values():
+                letter = wire.name[0]
+                if letter in ["x", "y", "z"]:
+                    n = wire.number()
+                    setattr(adders[n], letter, wire)
 
-            full_rules_names = {wire.name: rules for wire, rules in full_rules.items()}
-            names_sorted = sorted(full_rules_names.keys())
-            full_rules_sorted = [(name, full_rules_names[name]) for name in names_sorted]
-
-            # outputs = sorted(wire.name for wire in full_rules.keys())
-            # full_rules_sorted = {name: full_rules[name] for name in outputs}
-
-            for wire, rules in full_rules.items():
-                valid = self.verify_binary_sum(wire, rules)
-                if not valid:
+            for i, _ in enumerate(adders):
+                result = self.verify_adder(i, adders)
+                if not result:
                     pass
-                pass
 
             pass
+
+            # full_rules = Gate.build_rules_by_output(output_wires)
+            #
+            # full_rules_names = {wire.name: rules for wire, rules in full_rules.items()}
+            # names_sorted = sorted(full_rules_names.keys())
+            # full_rules_sorted = [(name, full_rules_names[name]) for name in names_sorted]
+            #
+            # # outputs = sorted(wire.name for wire in full_rules.keys())
+            # # full_rules_sorted = {name: full_rules[name] for name in outputs}
+            #
+            # for wire, rules in full_rules.items():
+            #     valid = self.verify_binary_sum(wire, rules)
+            #     if not valid:
+            #         pass
+            #     pass
+            #
+            # pass
 
             # Gate.process_all(gates)
             #
@@ -202,19 +255,56 @@ class Day24(Solver):
 
             return ""
 
+    def verify_adder(self, n: int, adders: List[Adder]) -> bool:
+        adder = adders[n]
+        adder_prev = adders[n - 1]
+
+        try:
+
+            if n == 0:
+
+                adder.u = None
+                adder.v = None
+                adder.w = None
+                adder.c = self.get_gate(adder.x, adder.y, Logic.AND).output
+
+                return adder.z.output_of_gate == self.get_gate(
+                    adder.x, adder.y, Logic.XOR
+                )
+
+            else:
+
+                adder.u = self.get_gate(adder.x, adder.y, Logic.XOR).output
+                adder.v = self.get_gate(adder.x, adder.y, Logic.AND).output
+                adder.w = self.get_gate(adder_prev.c, adder.u, Logic.AND).output
+                adder.c = self.get_gate(adder.w, adder.v, Logic.OR).output
+
+                return adder.z.output_of_gate == self.get_gate(
+                    adder_prev.c, adder.u, Logic.XOR
+                )
+
+        except KeyError:
+            return False
+
+    def get_gate(self, wire_1: Wire, wire_2: Wire, logic: Logic) -> Gate:
+        """Find gate through local lookup."""
+        return self.gates_by_wires[frozenset([wire_1, wire_2])][logic]
+
     @classmethod
     def verify_binary_sum(cls, wire, rules) -> bool:
-        if rules[0].logic != Gate.Logic.XOR:
+        if rules[0].logic != Logic.XOR:
             return False
 
         n = wire.number()
         if n == 0:
             return {w.name for w in rules[1]} == {"x00", "y00"}
 
-        expected = frozenset([
-            (Gate.Logic.XOR, frozenset({f"x{n:02}", f"y{n:02}"})),
-            (Gate.Logic.AND, frozenset({f"x{(n-1):02}", f"y{(n-1):02}"})),
-        ])
+        expected = frozenset(
+            [
+                (Logic.XOR, frozenset({f"x{n:02}", f"y{n:02}"})),
+                (Logic.AND, frozenset({f"x{(n-1):02}", f"y{(n-1):02}"})),
+            ]
+        )
 
         return rules[1] == expected
 
