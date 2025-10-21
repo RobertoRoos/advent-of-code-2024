@@ -14,10 +14,11 @@ class TestDay25(AdventTestCase):
         result = solver()
         self.assertEqual("3", result)
 
-    # def test_sample_part_2(self):
-    #     solver = self.get_solver(2)
-    #     result = solver()
-    #     self.assertEqual("xxx", result)
+    def test_sample_part_2(self):
+        solver = self.get_solver(2)
+        result = solver()
+        # There is no part 2 at all:
+        self.assertEqual("<empty>", result)
 
 
 if __name__ == "__main__":

@@ -57,14 +57,17 @@ class Day25(Solver):
             else:
                 lines_block.insert(0, line)
 
-        # Compare:
-        result = 0
-        for lock in locks:
-            for key in keys:
-                if lock.fit_key(key):
-                    result += 1
+        if self.args.part == 1:
+            result = 0
+            for lock in locks:
+                for key in keys:
+                    if lock.fit_key(key):
+                        result += 1
 
-        return str(result)
+            return str(result)
+
+        else:
+            return "<empty>"
 
 
 if __name__ == "__main__":
