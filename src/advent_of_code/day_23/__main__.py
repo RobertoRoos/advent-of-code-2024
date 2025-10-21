@@ -88,11 +88,11 @@ class Day23(Solver):
         """
 
         # Build a quick look-up of which nodes connects to which:
-        all_connected_nodes: DefaultDict[Node, Set[Node]] = defaultdict(set)
+        all_connected_nodes: DefaultDict[Node, FrozenSet[Node]] = defaultdict(frozenset)
         for node in self.graph.nodes:
-            all_connected_nodes[node] = {
+            all_connected_nodes[node] = frozenset(
                 n for _, n in self.graph.get_connected_nodes(node)
-            }
+            )
 
         # Defined clusters:
         clusters_queue: Set[FrozenSet[Node]] = set()
@@ -115,7 +115,7 @@ class Day23(Solver):
                 connected_nodes = all_connected_nodes[node]
 
                 if new_nodes is None:
-                    new_nodes = connected_nodes
+                    new_nodes = set(connected_nodes)
                 else:
                     new_nodes.intersection_update(connected_nodes)
 
